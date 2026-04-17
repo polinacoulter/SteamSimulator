@@ -1,0 +1,123 @@
+[Version]
+Version=1.4.0.1
+
+[Steam_sim.exe <0009>]
+Dest=$(AppPath)
+Date=13/09/99
+Time=16:46
+Version=1.4.0.1
+CABFilename=Steam_sim.CAB
+CABINFFile=Steam_sim.INF
+Uses1=MSVBVM60.DLL
+Uses2=Oleaut32.dll
+Uses3=Olepro32.dll
+Uses4=ASYCFILT.DLL
+Uses5=STDOLE2.TLB
+Uses6=COMCAT.DLL
+Uses7=UUCODE32.DLL
+Uses8=UUCODE16.DLL
+Uses9=Sp32w.dll
+Uses10=Gswag32.dll
+Uses11=Gswdll32.dll
+Uses12=model.dll
+Uses13=Steam_Sim.dll
+Uses14=AppIo.dll
+Uses15=fxsnd432.ocx
+Uses16=msado15.dll
+Uses17=COMCTL32.OCX
+Uses18=Cswsk32.ocx
+Uses19=fximg432.ocx
+Uses20=RICHTX32.OCX
+Uses21=COMCT232.OCX
+Uses22=MSWINSCK.OCX
+Uses23=COMDLG32.OCX
+Uses24=SYSINFO.OCX
+Uses25=Graphs32.ocx
+Uses26=HavenStretch.ocx
+Uses27=HavenPump v1_42.ocx
+Uses28=Haven3WayValve v1.41.ocx
+Uses29=HavenValve V1_2.ocx
+Uses30=fxrtx50g.ocx
+Uses31=MSFLXGRD.OCX
+Uses32=fxshp50g.ocx
+Uses33=HorizontalGauge.ocx
+Uses34=SquareGauge.ocx
+Uses35=EdgeGauge.ocx
+
+[UUCODE32.DLL <0009>]
+Dest=$(WinSysPath)
+Date=05/08/96
+Time=15:29
+Version=1.0.0.1
+
+[UUCODE16.DLL <0009>]
+Dest=$(WinSysPath)
+Date=05/08/96
+Time=15:06
+Version=1.0.0.1
+
+[Sp32w.dll <0009>]
+Dest=$(WinSysPath)
+Date=02/04/97
+Time=03:01
+Version=0.5.0.50
+
+[Gswag32.dll <0009>]
+Dest=$(WinSysPath)
+Date=18/04/97
+Time=05:00
+Version=5.0.0.0
+
+[AppIo.dll <0009>]
+Dest=$(WinSysPath)
+Date=16/03/99
+Time=19:49
+Version=3.2.0.0
+
+[fxsnd432.ocx <0009>]
+Dest=$(WinSysPath)
+Date=12/12/96
+Time=16:00
+Version=4.0.0.3
+
+[Cswsk32.ocx <0009>]
+Dest=$(WinSysPath)
+Date=05/08/96
+Time=15:42
+Version=2.0.0.118
+
+[fximg432.ocx <0009>]
+Dest=$(WinSysPath)
+Date=12/12/96
+Time=16:00
+Version=4.0.0.5
+
+[Graphs32.ocx <0009>]
+Dest=$(WinSysPath)
+Date=18/04/97
+Time=05:00
+Version=5.0.0.2
+
+[HavenStretch.ocx <0009>]
+Dest=$(WinSysPath)
+Date=30/09/98
+Time=10:37
+Version=1.2.0.0
+
+[HavenPump v1_42.ocx <0009>]
+Dest=$(WinSysPath)
+Date=27/02/98
+Time=11:47
+Version=1.4.0.2
+
+[Haven3WayValve v1.41.ocx <0009>]
+Dest=$(WinSysPath)
+Date=27/02/98
+Time=12:48
+Version=1.4.0.1
+
+[HavenValve V1_2.ocx <0009>]
+Dest=$(WinSysPath)
+Date=01/06/99
+Time=10:16
+Version=1.2.0.1

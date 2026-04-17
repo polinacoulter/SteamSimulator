@@ -1,0 +1,333 @@
+[Root]
+Most Recent Package=Standard Setup Package 1
+
+
+[Package|Dep File 1|Root]
+SubWizProgID=PDWizard.DepPkgSubWiz
+BuildFolder=C:\STEAM_SIM\VB Files
+
+[Package|Dep File 1|Configure DAO ISAMs]
+Applicable=No
+
+[Package|Dep File 1|Configure DAO ODBC]
+JetWorkspace=
+ODBCDirect=
+
+[Package|Dep File 1|Files Found]
+
+[Package|Dep File 1|Files Released]
+
+[Package|Dep File 1|Missing Dependency Information]
+C:\WINNT\system32\HavenValve V1_2.ocx=
+C:\WINNT\system32\Haven3WayValve v1.41.ocx=
+C:\WINNT\system32\HavenPump v1_42.ocx=
+C:\WINNT\system32\HavenStretch.ocx=
+C:\WINNT\system32\Graphs32.ocx=
+C:\WINNT\system32\fximg432.ocx=
+C:\WINNT\system32\Cswsk32.ocx=
+C:\WINNT\system32\fxsnd432.ocx=
+C:\Program Files\applicomIO\1.0\AppIo.dll=
+C:\WINNT\system32\Gswag32.dll=
+C:\HAVEN\Sp32w.dll=
+C:\WINNT\system\UUCODE16.DLL=
+C:\WINNT\system32\UUCODE32.DLL=
+
+[Package|Dep File 1|Out-of-Date Dependency Information]
+C:\WINNT\system32\fxshp50g.ocx=
+C:\WINNT\system32\Msvcrt.dll=
+C:\WINNT\system32\mfc42.dll=
+C:\WINNT\system32\fxrtx50g.ocx=
+
+[Package|Dep File 1|Files Added]
+
+[Package|Dep File 1|Files Removed]
+
+[Package|Dep File 1|Files In Project]
+C:\STEAM_SIM\VB Files\Steam_sim.exe=Yes
+C:\WINNT\system32\MSVBVM60.DLL=Yes
+C:\WINNT\system32\Oleaut32.dll=Yes
+C:\WINNT\system32\Olepro32.dll=Yes
+C:\WINNT\system32\ASYCFILT.DLL=Yes
+C:\WINNT\system32\STDOLE2.TLB=Yes
+C:\Program Files\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\COMCAT.DLL=Yes
+C:\WINNT\system32\UUCODE32.DLL=Yes
+C:\WINNT\system\UUCODE16.DLL=Yes
+C:\HAVEN\Sp32w.dll=Yes
+C:\WINNT\system32\Gswag32.dll=Yes
+C:\WINNT\system32\Gswdll32.dll=Yes
+C:\HAVEN\model.dll=Yes
+C:\STEAM_SIM\Fortran Files\Debug\Steam_Sim.dll=Yes
+C:\Program Files\applicomIO\1.0\AppIo.dll=Yes
+C:\WINNT\system32\fxsnd432.ocx=Yes
+C:\Program Files\Common Files\System\ado\msado15.dll=Yes
+C:\WINNT\system32\COMCTL32.OCX=Yes
+C:\WINNT\system32\Cswsk32.ocx=Yes
+C:\WINNT\system32\fximg432.ocx=Yes
+C:\WINNT\system32\RICHTX32.OCX=Yes
+C:\Program Files\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\RICHED32.DLL=Yes
+C:\WINNT\system32\COMCT232.OCX=Yes
+C:\WINNT\system32\MSWINSCK.OCX=Yes
+C:\WINNT\system32\COMDLG32.OCX=Yes
+C:\WINNT\system32\SYSINFO.OCX=Yes
+C:\WINNT\system32\Graphs32.ocx=Yes
+C:\WINNT\system32\HavenStretch.ocx=Yes
+C:\WINNT\system32\HavenPump v1_42.ocx=Yes
+C:\WINNT\system32\Haven3WayValve v1.41.ocx=Yes
+C:\WINNT\system32\HavenValve V1_2.ocx=Yes
+C:\WINNT\system32\fxrtx50g.ocx=Yes
+C:\WINNT\system32\fxtls532.dll=Yes
+C:\WINNT\system32\mfc42.dll=Yes
+C:\WINNT\system32\Msvcrt.dll=Yes
+C:\WINNT\system32\MSFLXGRD.OCX=Yes
+C:\WINNT\system32\fxshp50g.ocx=Yes
+C:\APM\HorizontalGaugeOCX\HorizontalGauge.ocx=Yes
+C:\WINNT\system32\ASCTRLS.OCX=Yes
+C:\WINNT\system32\MSSTKPRP.DLL=Yes
+C:\APM\GaugeOCX\SquareGauge.ocx=Yes
+C:\APM\EdgeGaugeOCX\EdgeGauge.ocx=Yes
+
+[Package|Dep File 1|Configure Registry Files]
+Applicable=
+
+[Package|Dep File 1|Configure Remote Servers]
+Applicable=
+
+[Package|Dep File 1|Install Locations]
+C:\STEAM_SIM\VB Files\Steam_sim.exe=$(AppPath)
+C:\WINNT\system32\MSVBVM60.DLL=$(WinSysPathSysFile)
+C:\WINNT\system32\Oleaut32.dll=$(WinSysPathSysFile)
+C:\WINNT\system32\Olepro32.dll=$(WinSysPathSysFile)
+C:\WINNT\system32\ASYCFILT.DLL=$(WinSysPathSysFile)
+C:\WINNT\system32\STDOLE2.TLB=$(WinSysPathSysFile)
+C:\Program Files\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\COMCAT.DLL=$(WinSysPathSysFile)
+C:\WINNT\system32\UUCODE32.DLL=$(WinSysPath)
+C:\WINNT\system\UUCODE16.DLL=$(WinSysPath)
+C:\HAVEN\Sp32w.dll=$(WinSysPath)
+C:\WINNT\system32\Gswag32.dll=$(WinSysPath)
+C:\WINNT\system32\Gswdll32.dll=$(WinSysPath)
+C:\HAVEN\model.dll=$(AppPath)
+C:\STEAM_SIM\Fortran Files\Debug\Steam_Sim.dll=$(AppPath)
+C:\Program Files\applicomIO\1.0\AppIo.dll=$(WinSysPath)
+C:\WINNT\system32\fxsnd432.ocx=$(WinSysPath)
+C:\Program Files\Common Files\System\ado\msado15.dll=$(CommonFilesSys)\ADO
+C:\WINNT\system32\COMCTL32.OCX=$(WinSysPath)
+C:\WINNT\system32\Cswsk32.ocx=$(WinSysPath)
+C:\WINNT\system32\fximg432.ocx=$(WinSysPath)
+C:\WINNT\system32\RICHTX32.OCX=$(WinSysPath)
+C:\Program Files\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\RICHED32.DLL=$(WinSysPathSysFile)
+C:\WINNT\system32\COMCT232.OCX=$(WinSysPath)
+C:\WINNT\system32\MSWINSCK.OCX=$(WinSysPath)
+C:\WINNT\system32\COMDLG32.OCX=$(WinSysPath)
+C:\WINNT\system32\SYSINFO.OCX=$(WinSysPath)
+C:\WINNT\system32\Graphs32.ocx=$(WinSysPath)
+C:\WINNT\system32\HavenStretch.ocx=$(WinSysPath)
+C:\WINNT\system32\HavenPump v1_42.ocx=$(WinSysPath)
+C:\WINNT\system32\Haven3WayValve v1.41.ocx=$(WinSysPath)
+C:\WINNT\system32\HavenValve V1_2.ocx=$(WinSysPath)
+C:\WINNT\system32\fxrtx50g.ocx=$(WinSysPath)
+C:\WINNT\system32\fxtls532.dll=$(WinSysPath)
+C:\WINNT\system32\mfc42.dll=$(WinSysPathSysFile)
+C:\WINNT\system32\Msvcrt.dll=$(WinSysPathSysFile)
+C:\WINNT\system32\MSFLXGRD.OCX=$(WinSysPath)
+C:\WINNT\system32\fxshp50g.ocx=$(WinSysPath)
+C:\APM\HorizontalGaugeOCX\HorizontalGauge.ocx=$(AppPath)
+C:\WINNT\system32\ASCTRLS.OCX=$(WinSysPath)
+C:\WINNT\system32\MSSTKPRP.DLL=$(WinSysPath)
+C:\APM\GaugeOCX\SquareGauge.ocx=$(AppPath)
+C:\APM\EdgeGaugeOCX\EdgeGauge.ocx=$(AppPath)
+
+[Package|Dep File 1|Configure Shared Files]
+Applicable=
+
+[Package|Dep File 1|DepFile]
+DepCabFile=Steam_sim.CAB
+DepCabRun=Steam_sim.INF
+
+[Package|Dep File 1|Package]
+PackageFolder=C:\STEAM_SIM\VB Files
+ProjectFolder=C:\STEAM_SIM\VB Files
+ServerSideCab=
+File1=C:\STEAM_SIM\VB Files\Steam_sim.DEP
+Handler1=PDWizard.FolderDplySubWiz
+Handler2=PDWizard.WebPostDplySubWiz
+
+
+[Package|Standard Setup Package 1|Root]
+SubWizProgID=PDWizard.SetupPkgSubWiz
+BuildFolder=e:\
+
+[Package|Standard Setup Package 1|Configure DAO ISAMs]
+Applicable=No
+
+[Package|Standard Setup Package 1|Configure DAO ODBC]
+JetWorkspace=
+ODBCDirect=
+
+[Package|Standard Setup Package 1|Files Found]
+
+[Package|Standard Setup Package 1|Files Released]
+
+[Package|Standard Setup Package 1|Missing Dependency Information]
+C:\WINNT\system32\HavenValve V1_2.ocx=
+C:\WINNT\system32\Haven3WayValve v1.41.ocx=
+C:\WINNT\system32\HavenPump v1_42.ocx=
+C:\WINNT\system32\HavenStretch.ocx=
+C:\WINNT\system32\Graphs32.ocx=
+C:\WINNT\system32\fximg432.ocx=
+C:\WINNT\system32\Cswsk32.ocx=
+C:\WINNT\system32\fxsnd432.ocx=
+C:\Program Files\applicomIO\1.0\AppIo.dll=
+C:\WINNT\system32\Gswag32.dll=
+C:\HAVEN\Sp32w.dll=
+C:\WINNT\system\UUCODE16.DLL=
+C:\WINNT\system32\UUCODE32.DLL=
+
+[Package|Standard Setup Package 1|Out-of-Date Dependency Information]
+C:\WINNT\system32\fxshp50g.ocx=
+C:\WINNT\system32\Msvcrt.dll=
+C:\WINNT\system32\mfc42.dll=
+C:\WINNT\system32\fxrtx50g.ocx=
+
+[Package|Standard Setup Package 1|Files Added]
+
+[Package|Standard Setup Package 1|Files Removed]
+
+[Package|Standard Setup Package 1|Files In Project]
+C:\STEAM_SIM\VB Files\Steam_sim.exe=Yes
+C:\WINNT\system32\MSVBVM60.DLL=Yes
+C:\WINNT\system32\Oleaut32.dll=Yes
+C:\WINNT\system32\Olepro32.dll=Yes
+C:\WINNT\system32\ASYCFILT.DLL=Yes
+C:\WINNT\system32\STDOLE2.TLB=Yes
+C:\Program Files\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\COMCAT.DLL=Yes
+C:\WINNT\system32\UUCODE32.DLL=Yes
+C:\WINNT\system\UUCODE16.DLL=Yes
+C:\HAVEN\Sp32w.dll=Yes
+C:\WINNT\system32\Gswag32.dll=Yes
+C:\WINNT\system32\Gswdll32.dll=Yes
+C:\HAVEN\model.dll=Yes
+C:\STEAM_SIM\Fortran Files\Debug\Steam_Sim.dll=Yes
+C:\Program Files\applicomIO\1.0\AppIo.dll=Yes
+C:\WINNT\system32\fxsnd432.ocx=Yes
+C:\WINNT\system32\COMCTL32.OCX=Yes
+C:\WINNT\system32\Cswsk32.ocx=Yes
+C:\WINNT\system32\fximg432.ocx=Yes
+C:\WINNT\system32\RICHTX32.OCX=Yes
+C:\Program Files\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\RICHED32.DLL=Yes
+C:\WINNT\system32\COMCT232.OCX=Yes
+C:\WINNT\system32\MSWINSCK.OCX=Yes
+C:\WINNT\system32\COMDLG32.OCX=Yes
+C:\WINNT\system32\SYSINFO.OCX=Yes
+C:\WINNT\system32\Graphs32.ocx=Yes
+C:\WINNT\system32\HavenStretch.ocx=Yes
+C:\WINNT\system32\HavenPump v1_42.ocx=Yes
+C:\WINNT\system32\Haven3WayValve v1.41.ocx=Yes
+C:\WINNT\system32\HavenValve V1_2.ocx=Yes
+C:\WINNT\system32\fxrtx50g.ocx=Yes
+C:\WINNT\system32\fxtls532.dll=Yes
+C:\WINNT\system32\mfc42.dll=Yes
+C:\WINNT\system32\Msvcrt.dll=Yes
+C:\WINNT\system32\MSFLXGRD.OCX=Yes
+C:\WINNT\system32\fxshp50g.ocx=Yes
+C:\APM\HorizontalGaugeOCX\HorizontalGauge.ocx=Yes
+C:\WINNT\system32\ASCTRLS.OCX=Yes
+C:\WINNT\system32\MSSTKPRP.DLL=Yes
+C:\APM\GaugeOCX\SquareGauge.ocx=Yes
+C:\APM\EdgeGaugeOCX\EdgeGauge.ocx=Yes
+C:\Program Files\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\MDAC_TYP.EXE=Yes
+C:\Program Files\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP.EXE=Yes
+C:\Program Files\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP1.EXE=Yes
+C:\WINNT\system32\VB6STKIT.DLL=Yes
+C:\Program Files\Microsoft Visual Studio\VB98\Wizards\PDWizard\ST6UNST.EXE=Yes
+
+[Package|Standard Setup Package 1|Configure Registry Files]
+Applicable=No
+
+[Package|Standard Setup Package 1|Configure Remote Servers]
+Applicable=No
+
+[Package|Standard Setup Package 1|Install Locations]
+C:\STEAM_SIM\VB Files\Steam_sim.exe=$(AppPath)
+C:\WINNT\system32\MSVBVM60.DLL=$(WinSysPathSysFile)
+C:\WINNT\system32\Oleaut32.dll=$(WinSysPathSysFile)
+C:\WINNT\system32\Olepro32.dll=$(WinSysPathSysFile)
+C:\WINNT\system32\ASYCFILT.DLL=$(WinSysPathSysFile)
+C:\WINNT\system32\STDOLE2.TLB=$(WinSysPathSysFile)
+C:\Program Files\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\COMCAT.DLL=$(WinSysPathSysFile)
+C:\WINNT\system32\UUCODE32.DLL=$(WinSysPath)
+C:\WINNT\system\UUCODE16.DLL=$(WinSysPath)
+C:\HAVEN\Sp32w.dll=$(WinSysPath)
+C:\WINNT\system32\Gswag32.dll=$(WinSysPath)
+C:\WINNT\system32\Gswdll32.dll=$(WinSysPath)
+C:\HAVEN\model.dll=$(AppPath)
+C:\STEAM_SIM\Fortran Files\Debug\Steam_Sim.dll=$(AppPath)
+C:\Program Files\applicomIO\1.0\AppIo.dll=$(WinSysPath)
+C:\WINNT\system32\fxsnd432.ocx=$(WinSysPath)
+C:\Program Files\Common Files\System\ado\msado15.dll=$(CommonFilesSys)\ADO
+C:\WINNT\system32\COMCTL32.OCX=$(WinSysPath)
+C:\WINNT\system32\Cswsk32.ocx=$(WinSysPath)
+C:\WINNT\system32\fximg432.ocx=$(WinSysPath)
+C:\WINNT\system32\RICHTX32.OCX=$(WinSysPath)
+C:\Program Files\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\RICHED32.DLL=$(WinSysPathSysFile)
+C:\WINNT\system32\COMCT232.OCX=$(WinSysPath)
+C:\WINNT\system32\MSWINSCK.OCX=$(WinSysPath)
+C:\WINNT\system32\COMDLG32.OCX=$(WinSysPath)
+C:\WINNT\system32\SYSINFO.OCX=$(WinSysPath)
+C:\WINNT\system32\Graphs32.ocx=$(WinSysPath)
+C:\WINNT\system32\HavenStretch.ocx=$(WinSysPath)
+C:\WINNT\system32\HavenPump v1_42.ocx=$(WinSysPath)
+C:\WINNT\system32\Haven3WayValve v1.41.ocx=$(WinSysPath)
+C:\WINNT\system32\HavenValve V1_2.ocx=$(WinSysPath)
+C:\WINNT\system32\fxrtx50g.ocx=$(WinSysPath)
+C:\WINNT\system32\fxtls532.dll=$(WinSysPath)
+C:\WINNT\system32\mfc42.dll=$(WinSysPathSysFile)
+C:\WINNT\system32\Msvcrt.dll=$(WinSysPathSysFile)
+C:\WINNT\system32\MSFLXGRD.OCX=$(WinSysPath)
+C:\WINNT\system32\fxshp50g.ocx=$(WinSysPath)
+C:\APM\HorizontalGaugeOCX\HorizontalGauge.ocx=$(WinSysPath)
+C:\WINNT\system32\ASCTRLS.OCX=$(WinSysPath)
+C:\WINNT\system32\MSSTKPRP.DLL=$(WinSysPath)
+C:\APM\GaugeOCX\SquareGauge.ocx=$(WinSysPath)
+C:\APM\EdgeGaugeOCX\EdgeGauge.ocx=$(WinSysPath)
+C:\Program Files\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\MDAC_TYP.EXE=$(AppPath)
+C:\Program Files\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP.EXE=$(AppPath)
+C:\Program Files\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP1.EXE=$(WinPath)
+C:\WINNT\system32\VB6STKIT.DLL=$(WinSysPathSysFile)
+C:\Program Files\Microsoft Visual Studio\VB98\Wizards\PDWizard\ST6UNST.EXE=$(WinPath)
+
+[Package|Standard Setup Package 1|Configure Shared Files]
+Applicable=Yes
+C:\STEAM_SIM\VB Files\Steam_sim.exe=No
+C:\HAVEN\model.dll=No
+C:\STEAM_SIM\Fortran Files\Debug\Steam_Sim.dll=No
+C:\Program Files\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\MDAC_TYP.EXE=No
+
+[Package|Standard Setup Package 1|DepFile]
+DepCabFile=Steam_sim.CAB
+DepCabRun=Steam_sim.INF
+
+[Package|Standard Setup Package 1|Distribution]
+Type=single
+Size=
+Title=Executive
+
+[Package|Standard Setup Package 1|IconGroups]
+Group0=Executive
+PrivateGroup0=True
+Parent0=$(Programs)
+
+[Package|Standard Setup Package 1|Executive]
+Icon1=Steam_sim.exe
+Title1=Executive
+StartIn1=$(AppPath)
+Key1=Icon1
+
+[Package|Standard Setup Package 1|Package]
+PackageFolder=e:\
+ProjectFolder=C:\STEAM_SIM\VB Files
+ServerSideCab=
+File1=e:\setup.exe
+File2=e:\Setup.Lst
+File3=e:\Steam_sim.CAB
+Handler1=PDWizard.FolderDplySubWiz
+Handler2=PDWizard.WebPostDplySubWiz
