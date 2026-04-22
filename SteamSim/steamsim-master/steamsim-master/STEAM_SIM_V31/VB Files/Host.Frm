@@ -3206,11 +3206,13 @@ Call CheckScheduledFaults
 
 
 ' === 21/12/01 ===
-If Dongle_Integer <> 0 Then
- If Dongle_Integer <> Dongle_Password_Response Then
-        Exit_sharply = True
+If Not DISABLE_PROFIBUS Then
+ If Dongle_Integer <> 0 Then
+  If Dongle_Integer <> Dongle_Password_Response Then
+         Exit_sharply = True
+  End If
+ Else
  End If
-Else
 End If
 
 
@@ -3895,7 +3897,11 @@ Else
 
     ' === 25/02/04 ===
     ' For BOTH types of dongle you need the NEXT LINE...
-      Dongle_Enable_Flag = Not HARDWARE_flag   ' IF there is NO HARWARE then we need the dongle
+      If DISABLE_PROFIBUS Then
+          Dongle_Enable_Flag = False
+      Else
+          Dongle_Enable_Flag = Not HARDWARE_flag   ' IF there is NO HARWARE then we need the dongle
+      End If
     
     ' === 25/02/04 For Ray Gillet SINGLE USER, NO DONGLE , DLL protected(Greece V26.00 G)...
     ' Dongle_Enable_Flag = False
