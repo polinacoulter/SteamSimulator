@@ -23,6 +23,7 @@ Global cold_start_hourglass As Boolean
 
 ' 10/12/98
 Global HARDWARE_flag As Boolean
+Public Const DEFAULT_DISABLE_PROFIBUS As Boolean = True
 Global DISABLE_PROFIBUS As Boolean
 
 ' 8/12/98
