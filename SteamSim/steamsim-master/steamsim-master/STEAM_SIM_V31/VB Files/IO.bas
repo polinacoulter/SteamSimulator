@@ -341,7 +341,7 @@ Private Sub Request_IOIO_Data()
             Set MyIOIOReadyStateHandler = New IOIOReadyStateHandler
         End If
         
-        ioioXmlHttp.Open "GET", "http://192.168.1.220:8080/ioio/status", True
+        ioioXmlHttp.Open "GET", IOIO_STATUS_URL, True
         ioioXmlHttp.setRequestHeader "Content-type", "text/xml"
         ioioXmlHttp.OnReadyStateChange = MyIOIOReadyStateHandler        ' Assign the wrapper class object to onreadystatechange.
         
@@ -379,6 +379,7 @@ Public Function ReadAllCards(CLOCK As Timer) As Boolean
 'reads all applicom cards and returns true if successfull else false
 Dim error As Boolean
 If ProfibusDisabled Then
+  Request_IOIO_Data
   ReadAllCards = True
   Exit Function
 End If

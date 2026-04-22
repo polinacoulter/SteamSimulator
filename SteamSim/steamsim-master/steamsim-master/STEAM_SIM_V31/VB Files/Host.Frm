@@ -7003,7 +7003,10 @@ If RunIO Then
       
     ' 22/10/99
     ' 29/10/99  use new flag hardware_flag  If PTT Then
-        If Not HARDWARE_flag Then
+        If DISABLE_PROFIBUS Then
+          All_cards_read_OK = ReadAllCards(Timer_IO)
+  
+        ElseIf Not HARDWARE_flag Then
         ' 22/10/99      We need this flag false ( for eg Main_SB.FRM AVR switch and pot to work )
           All_cards_read_OK = False
   
