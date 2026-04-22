@@ -6,6 +6,11 @@ Option Explicit
 Public MyIOIOReadyStateHandler As IOIOReadyStateHandler
 
 
+Private Function ProfibusDisabled() As Boolean
+  ProfibusDisabled = DISABLE_PROFIBUS
+End Function
+
+
 Public Sub ErrorMessage(Status As Integer)
 Dim msg As String
   Select Case Status
@@ -26,6 +31,10 @@ Private Function Writedata(TabByte() As Byte, CLOCK As Timer, Card_no As Integer
 'writes data to blocks
 Dim Ret_value As Boolean
 Dim Status As Integer, i As Integer, Offset As Integer
+If ProfibusDisabled Then
+  Writedata = True
+  Exit Function
+End If
 Offset = 0
 ' write tabbyte array to buffer
   Ret_value = IO_WriteQByte(Card_no, Block_NO, Offset, Nb, TabByte(0), Status)
@@ -42,6 +51,10 @@ End Function
 Private Function WriteRefresh(CLOCK As Timer, Card_no As Integer) As Boolean
 Dim Ret_value As Boolean
 Dim Status As Integer
+If ProfibusDisabled Then
+  WriteRefresh = True
+  Exit Function
+End If
 ' refresh buffer
   Ret_value = IO_RefreshOutput(Card_no, Status)
   If Ret_value = False Then  ' test if refresh occured
@@ -65,6 +78,10 @@ Dim TabByte(3) As Byte
 Dim error As Boolean
 'Static illuminate As Boolean
 'Static illuminate2 As Boolean
+If ProfibusDisabled Then
+  Set_D_Output = True
+  Exit Function
+End If
 Set_D_Output = False
 ' Prepare profibus for writing too
 Nb = 4  ' number of bytes to be written
@@ -148,6 +165,10 @@ Dim TAIndex As Integer
 Dim base As Integer, Nb As Integer, counter As Integer, i As Integer
 Dim TabByte(8) As Byte
 Dim error As Boolean
+If ProfibusDisabled Then
+  Set_A_Output = True
+  Exit Function
+End If
 Nb = 8  ' number of bytes to be written
 
 Set_A_Output = False
@@ -202,6 +223,10 @@ Public Function ReadData(TabByte() As Byte, CLOCK As Timer, Card As Integer, Blo
 'reads data from blocks
 Dim Ret_value As Boolean
 Dim Status As Integer
+If ProfibusDisabled Then
+  ReadData = True
+  Exit Function
+End If
 
   'refresh inputs buffer
   Ret_value = IO_RefreshInput(Card, Status)
@@ -232,6 +257,10 @@ Dim TAIndex As Integer
 Dim base As Integer, Nb As Integer, counter As Integer
 Dim TabByte(8) As Byte
 Dim error As Boolean
+If ProfibusDisabled Then
+  Get_A_Input = True
+  Exit Function
+End If
   Nb = 8  'number of bytes read from block
   
 Get_A_Input = False
@@ -269,6 +298,10 @@ Dim TAIndex As Integer
 Dim base As Integer, Nb As Integer, Bit As Integer
 Dim TabByte(4) As Byte
 Dim error As Boolean
+If ProfibusDisabled Then
+  Get_D_input = True
+  Exit Function
+End If
  Get_D_input = False
   Nb = 4  ' number of bytes to read
 'testing only
@@ -345,6 +378,10 @@ End Sub
 Public Function ReadAllCards(CLOCK As Timer) As Boolean
 'reads all applicom cards and returns true if successfull else false
 Dim error As Boolean
+If ProfibusDisabled Then
+  ReadAllCards = True
+  Exit Function
+End If
 ReadAllCards = False
 'do
 'CardStatus = 0

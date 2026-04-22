@@ -3828,7 +3828,13 @@ End If
 ' xxxx 10/04/02 FOR TESTING FM we need GoTo Skipxx===
 'GoTo Skipxx
 
-If Not PTT And I_AM_HOST Then
+DISABLE_PROFIBUS = True
+
+If DISABLE_PROFIBUS Then
+    HW_flagA = True
+    HW_flagB = True
+    HARDWARE_flag = False
+ElseIf Not PTT And I_AM_HOST Then
 
     IO_ret_value = IO_Init(WINCARD_A, Status)
     
@@ -4794,7 +4800,7 @@ Debug.Print " Shuting down : MDIform and frm_intro"
 
 ' === 23/11/00 ===
 
-If Not PTT Then
+If Not PTT And Not DISABLE_PROFIBUS Then
 
  IO_ret_value = IO_Exit(WINCARD_A, Status)
  IO_ret_value = IO_Exit(WINCARD_B, Status)
