@@ -27,10 +27,16 @@ class IOIORequestHandler(BaseHTTPRequestHandler):
             return
 
         payload = load_payload()
-        body = json.dumps(payload).encode("utf-8")
+        values = payload.get("analog_input", [])
+
+        parts = ['<?xml version="1.0" encoding="UTF-8"?>', "<pins>"]
+        for index, value in enumerate(values):
+            parts.append('<pin name="ain%d" calibrated="%d"/>' % (index, int(value)))
+        parts.append("</pins>")
+        body = "".join(parts).encode("utf-8")
 
         self.send_response(200)
-        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Type", "text/xml; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)

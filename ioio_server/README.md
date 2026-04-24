@@ -3,14 +3,22 @@
 This folder contains a minimal local server for the VB6 simulator's
 `/ioio/status` polling path.
 
-The current VB6 code accepts either XML or JSON. This server returns JSON in the
-simplest supported shape:
+The current VB6 code accepts either XML or JSON. This server returns XML in the
+shape `IOIOReadyStateHandler.cls` parses natively via MSXML2:
 
-```json
-{
-  "analog_input": [123, 45, 67]
-}
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<pins>
+  <pin name="ain0" calibrated="123"/>
+  <pin name="ain1" calibrated="45"/>
+  <pin name="ain2" calibrated="67"/>
+</pins>
 ```
+
+XML is used on the wire because VB6 on XP has no built-in JSON parser;
+MSXML2 handles XML natively. `sample_data.json` stays as the editable
+source — the server reads integers from it and renders XML on each
+request.
 
 ## Run
 
