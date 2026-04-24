@@ -106,7 +106,7 @@ Global A_INPUT(NO_A_INPUT) As Byte
 Global A_INPUT_old(NO_A_INPUT) As Byte
 
 Global ioioXmlHttp As MSXML2.XMLHTTP
-Public Const IOIO_STATUS_URL As String = "http://192.168.1.220:8080/ioio/status"
+Public Const IOIO_STATUS_URL As String = "http://127.0.0.1:8080/ioio/status"
 ' The simulator codebase already reads A_INPUT(0) and A_INPUT(1), so the target base stays 0.
 ' If the Python server names its first input "ain1", set IOIO_PIN_NAME_BASE to 1.
 Public Const IOIO_INPUT_TARGET_BASE As Integer = 0
