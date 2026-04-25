@@ -1,18 +1,22 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 import json
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from pathlib import Path
+import os
+
+try:
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+except ImportError:
+    from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
 
 HOST = "127.0.0.1"
 PORT = 8080
-BASE_DIR = Path(__file__).resolve().parent
-SAMPLE_DATA_PATH = BASE_DIR / "sample_data.json"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+SAMPLE_DATA_PATH = os.path.join(BASE_DIR, "sample_data.json")
 
 
 def load_payload():
-    if SAMPLE_DATA_PATH.exists():
-        with SAMPLE_DATA_PATH.open("r", encoding="utf-8") as handle:
+    if os.path.exists(SAMPLE_DATA_PATH):
+        with open(SAMPLE_DATA_PATH, "r") as handle:
             data = json.load(handle)
         if isinstance(data, dict) and isinstance(data.get("analog_input"), list):
             return data
@@ -46,7 +50,7 @@ class IOIORequestHandler(BaseHTTPRequestHandler):
 
 
 def main():
-    server = ThreadingHTTPServer((HOST, PORT), IOIORequestHandler)
+    server = HTTPServer((HOST, PORT), IOIORequestHandler)
     print("Serving IOIO status on http://%s:%s/ioio/status" % (HOST, PORT))
     server.serve_forever()
 
