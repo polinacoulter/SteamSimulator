@@ -4028,13 +4028,10 @@ If I_AM_INSTRUCTOR Then
     mnu_instructor.Enabled = True
     
     ' 16/12/98
-    If HARDWARE_flag Then
-        mnuHardware.Enabled = True
-        mnuHardware.Visible = True
-    Else
-        mnuHardware.Enabled = False
-        mnuHardware.Visible = False
-    End If
+    ' Force-show the Hardware menu so the AI test form is reachable on the
+    ' Profibus-bypass / Python-server path (HARDWARE_flag is forced False there).
+    mnuHardware.Enabled = True
+    mnuHardware.Visible = True
     
     
         ' === 19/11/02 ADDED for HA TEST then REMOVED again ...===
