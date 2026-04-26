@@ -15,20 +15,22 @@ Option Explicit
 
 Sub OnReadyStateChange()
 Attribute OnReadyStateChange.VB_UserMemId = 0
-    If ioioXmlHttp.readyState = 4 Then
-        ' Belt-and-suspenders cleanup: if parsing throws, we still nil the handle so
-        ' Request_IOIO_Data isn't blocked. Pairs with the unconditional reset over there.
-        On Error Resume Next
+    ' Snapshot the global reference. Request_IOIO_Data unconditionally nils ioioXmlHttp
+    ' on each poll, and a callback for a previous request can fire after that nil — so
+    ' we work off our own ref and let the handle drop when this Sub returns.
+    On Error Resume Next
 
-        Dim responseText As String
-        responseText = ioioXmlHttp.responseText
+    Dim http As MSXML2.XMLHTTP
+    Set http = ioioXmlHttp
 
-        If Not TryLoadAnalogInputsFromXml(responseText) Then
-            Call TryLoadAnalogInputsFromJson(responseText)
-        End If
+    If http Is Nothing Then Exit Sub
+    If http.readyState <> 4 Then Exit Sub
 
-        Set ioioXmlHttp = Nothing
-        On Error GoTo 0
+    Dim responseText As String
+    responseText = http.responseText
+
+    If Not TryLoadAnalogInputsFromXml(responseText) Then
+        Call TryLoadAnalogInputsFromJson(responseText)
     End If
 End Sub
 
