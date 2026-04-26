@@ -105,7 +105,8 @@ class SimpleHandler(BaseHTTPRequestHandler):
             return
 
         if route == "/ioio/status":
-            self.handle_ioio_status()
+            # Same text payload as /api/analog; VB parses the ain= line and ignores the rest.
+            self.handle_api_analog(query)
             return
 
         if route == "/api/analog":
@@ -284,16 +285,6 @@ class SimpleHandler(BaseHTTPRequestHandler):
         STATE[array_name][index] = value
         print("SET DIGITAL array=%s index=%d value=%d" % (array_name, index, value))
         self.send_text_response("ok", 200)
-
-    def handle_ioio_status(self):
-        # XML in the shape IOIOReadyStateHandler.cls parses via MSXML2.
-        # Reads the same STATE["ain"] the slider page writes, so a slider
-        # drag in the browser shows up on the next VB poll.
-        parts = ['<?xml version="1.0" encoding="UTF-8"?>', "<pins>"]
-        for index, value in enumerate(STATE["ain"]):
-            parts.append('<pin name="ain%d" calibrated="%d"/>' % (index, int(value)))
-        parts.append("</pins>")
-        self.send_xml_response("".join(parts), 200)
 
     def handle_api_analog(self, query):
         lines = []
@@ -902,14 +893,6 @@ function initDigitalPage() {
         self.end_headers()
         self.wfile.write(body)
 
-    def send_xml_response(self, xml, status_code=200):
-        body = self.to_bytes(xml)
-        self.send_response(status_code)
-        self.send_header("Content-Type", "text/xml; charset=utf-8")
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
-
     def send_not_found(self):
         self.send_text_response("not found", 404)
 
@@ -937,7 +920,7 @@ def main():
     print("  GET  /test/digital")
     print("  GET  /api/analog")
     print("  GET  /api/digital")
-    print("  GET  /ioio/status   (XML for VB6 client)")
+    print("  GET  /ioio/status   (text alias of /api/analog for VB6 client)")
     print("  POST /api/set_analog?array=ain&index=0&value=123")
     print("  POST /api/set_digital?array=dout&index=0&value=2")
     print("Array lengths:")

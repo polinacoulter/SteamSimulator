@@ -107,11 +107,10 @@ Global A_INPUT_old(NO_A_INPUT) As Byte
 
 Global ioioXmlHttp As MSXML2.XMLHTTP
 Public Const IOIO_STATUS_URL As String = "http://127.0.0.1:8080/ioio/status"
-' The simulator codebase already reads A_INPUT(0) and A_INPUT(1), so the target base stays 0.
-' If the Python server names its first input "ain1", set IOIO_PIN_NAME_BASE to 1.
+' Wire payload is text: "ain=v0,v1,v2,...". Source index N lands in
+' A_INPUT(N - IOIO_INPUT_SOURCE_BASE + IOIO_INPUT_TARGET_BASE). Both default to 0.
 Public Const IOIO_INPUT_TARGET_BASE As Integer = 0
-Public Const IOIO_PIN_NAME_BASE As Integer = 0
-Public Const IOIO_JSON_ARRAY_BASE As Integer = 0
+Public Const IOIO_INPUT_SOURCE_BASE As Integer = 0
 Global profiIgnoreList As String
 Global profiIgnoreListRead As Boolean
 
