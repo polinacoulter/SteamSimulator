@@ -111,6 +111,10 @@ Public Const IOIO_STATUS_URL As String = "http://127.0.0.1:8080/ioio/status"
 ' A_INPUT(N - IOIO_INPUT_SOURCE_BASE + IOIO_INPUT_TARGET_BASE). Both default to 0.
 Public Const IOIO_INPUT_TARGET_BASE As Integer = 0
 Public Const IOIO_INPUT_SOURCE_BASE As Integer = 0
+
+' Same shape for digital — "din=v0,v1,..." with 0/1 per channel.
+Public Const IOIO_DIGITAL_TARGET_BASE As Long = 0
+Public Const IOIO_DIGITAL_SOURCE_BASE As Long = 0
 Global profiIgnoreList As String
 Global profiIgnoreListRead As Boolean
 

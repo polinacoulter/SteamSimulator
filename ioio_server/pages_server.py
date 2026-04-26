@@ -105,8 +105,9 @@ class SimpleHandler(BaseHTTPRequestHandler):
             return
 
         if route == "/ioio/status":
-            # Same text payload as /api/analog; VB parses the ain= line and ignores the rest.
-            self.handle_api_analog(query)
+            # Combined text payload for VB: poll_ms, ain, aout, din, dout. The handler
+            # picks the lines it cares about by prefix and ignores the rest.
+            self.handle_ioio_status(query)
             return
 
         if route == "/api/analog":
@@ -291,6 +292,15 @@ class SimpleHandler(BaseHTTPRequestHandler):
         lines.append("poll_ms=%d" % get_poll_ms(query))
         lines.append("ain=" + ",".join([str(x) for x in STATE["ain"]]))
         lines.append("aout=" + ",".join([str(x) for x in STATE["aout"]]))
+        self.send_text_response("\n".join(lines), 200)
+
+    def handle_ioio_status(self, query):
+        lines = []
+        lines.append("poll_ms=%d" % get_poll_ms(query))
+        lines.append("ain=" + ",".join([str(x) for x in STATE["ain"]]))
+        lines.append("aout=" + ",".join([str(x) for x in STATE["aout"]]))
+        lines.append("din=" + ",".join([str(x) for x in STATE["din"]]))
+        lines.append("dout=" + ",".join([str(x) for x in STATE["dout"]]))
         self.send_text_response("\n".join(lines), 200)
 
     def handle_api_digital(self, query):
