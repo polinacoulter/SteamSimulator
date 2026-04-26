@@ -334,19 +334,25 @@ End Function
 Private Sub Request_IOIO_Data()
     ' Requires a reference to Microsoft XML library
 
-    If ioioXmlHttp Is Nothing Then
-        Set ioioXmlHttp = New MSXML2.XMLHTTP
-        
-        If MyIOIOReadyStateHandler Is Nothing Then          ' Create only one instance of the wrapper class.
-            Set MyIOIOReadyStateHandler = New IOIOReadyStateHandler
-        End If
-        
-        ioioXmlHttp.Open "GET", IOIO_STATUS_URL, True
-        ioioXmlHttp.setRequestHeader "Content-type", "text/xml"
-        ioioXmlHttp.OnReadyStateChange = MyIOIOReadyStateHandler        ' Assign the wrapper class object to onreadystatechange.
-        
-        ioioXmlHttp.send
+    ' Drop any previous request unconditionally. The old gate (If ioioXmlHttp Is Nothing)
+    ' could permanently latch closed if a callback ever failed to nil the handle, which
+    ' would silently freeze polling. Abandoning the prior request is safe over localhost.
+    On Error Resume Next
+    Set ioioXmlHttp = Nothing
+    On Error GoTo 0
+
+    Set ioioXmlHttp = New MSXML2.XMLHTTP
+
+    If MyIOIOReadyStateHandler Is Nothing Then          ' Create only one instance of the wrapper class.
+        Set MyIOIOReadyStateHandler = New IOIOReadyStateHandler
     End If
+
+    On Error Resume Next
+    ioioXmlHttp.Open "GET", IOIO_STATUS_URL, True
+    ioioXmlHttp.setRequestHeader "Content-type", "text/xml"
+    ioioXmlHttp.OnReadyStateChange = MyIOIOReadyStateHandler        ' Assign the wrapper class object to onreadystatechange.
+    ioioXmlHttp.send
+    On Error GoTo 0
 
 End Sub
 

@@ -16,16 +16,19 @@ Option Explicit
 Sub OnReadyStateChange()
 Attribute OnReadyStateChange.VB_UserMemId = 0
     If ioioXmlHttp.readyState = 4 Then
+        ' Belt-and-suspenders cleanup: if parsing throws, we still nil the handle so
+        ' Request_IOIO_Data isn't blocked. Pairs with the unconditional reset over there.
+        On Error Resume Next
+
         Dim responseText As String
         responseText = ioioXmlHttp.responseText
 
         If Not TryLoadAnalogInputsFromXml(responseText) Then
             Call TryLoadAnalogInputsFromJson(responseText)
         End If
-        
-        Set ioioXmlHttp = Nothing
 
-        'MsgBox "Done"
+        Set ioioXmlHttp = Nothing
+        On Error GoTo 0
     End If
 End Sub
 
