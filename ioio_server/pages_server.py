@@ -162,6 +162,11 @@ class SimpleHandler(BaseHTTPRequestHandler):
             self.handle_set_digital(form)
             return
 
+        if route == "/ioio/outputs":
+            # VB pushes its A_OUTPUT and D_OUTPUT arrays here every poll cycle.
+            self.handle_ioio_outputs(form)
+            return
+
         self.send_not_found()
 
     def handle_read(self, query):
@@ -302,6 +307,28 @@ class SimpleHandler(BaseHTTPRequestHandler):
         lines.append("din=" + ",".join([str(x) for x in STATE["din"]]))
         lines.append("dout=" + ",".join([str(x) for x in STATE["dout"]]))
         self.send_text_response("\n".join(lines), 200)
+
+    def handle_ioio_outputs(self, form):
+        self.apply_output_csv("aout", form.get("aout", ""))
+        self.apply_output_csv("dout", form.get("dout", ""))
+        self.send_text_response("ok", 200)
+
+    def apply_output_csv(self, array_name, csv):
+        if array_name not in STATE or not csv:
+            return
+        target = STATE[array_name]
+        parts = csv.split(",")
+        n = len(parts) if len(parts) < len(target) else len(target)
+        for i in range(n):
+            try:
+                value = int(parts[i])
+            except:
+                continue
+            if value < 0:
+                value = 0
+            if value > 255:
+                value = 255
+            target[i] = value
 
     def handle_api_digital(self, query):
         lines = []
@@ -930,7 +957,8 @@ def main():
     print("  GET  /test/digital")
     print("  GET  /api/analog")
     print("  GET  /api/digital")
-    print("  GET  /ioio/status   (text alias of /api/analog for VB6 client)")
+    print("  GET  /ioio/status   (combined ain/aout/din/dout for VB6 client)")
+    print("  POST /ioio/outputs  (VB6 pushes its A_OUTPUT and D_OUTPUT here)")
     print("  POST /api/set_analog?array=ain&index=0&value=123")
     print("  POST /api/set_digital?array=dout&index=0&value=2")
     print("Array lengths:")

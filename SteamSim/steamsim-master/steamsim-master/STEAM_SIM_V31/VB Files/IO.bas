@@ -356,6 +356,40 @@ Private Sub Request_IOIO_Data()
 
 End Sub
 
+Private Sub Send_IOIO_Outputs()
+    ' Push A_OUTPUT and D_OUTPUT to the Python server. Fire-and-forget async POST: we
+    ' don't care about the response, and abandoning a previous in-flight request is
+    ' safe — same self-healing pattern as Request_IOIO_Data.
+    On Error Resume Next
+    Set ioioOutHttp = Nothing
+    On Error GoTo 0
+
+    Set ioioOutHttp = New MSXML2.XMLHTTP
+
+    Dim aoutParts() As String
+    ReDim aoutParts(0 To UBound(A_OUTPUT))
+    Dim i As Long
+    For i = 0 To UBound(A_OUTPUT)
+        aoutParts(i) = CStr(A_OUTPUT(i))
+    Next i
+
+    Dim doutParts() As String
+    ReDim doutParts(0 To UBound(D_OUTPUT))
+    For i = 0 To UBound(D_OUTPUT)
+        doutParts(i) = CStr(D_OUTPUT(i))
+    Next i
+
+    Dim body As String
+    body = "aout=" & Join(aoutParts, ",") & "&dout=" & Join(doutParts, ",")
+
+    On Error Resume Next
+    ioioOutHttp.Open "POST", IOIO_OUTPUTS_URL, True
+    ioioOutHttp.setRequestHeader "Content-Type", "application/x-www-form-urlencoded"
+    ioioOutHttp.send body
+    On Error GoTo 0
+
+End Sub
+
 Private Sub CheckInputsToIgnore()
 If (Not profiIgnoreListRead) Then
     profiIgnoreListRead = True
@@ -386,6 +420,7 @@ Public Function ReadAllCards(CLOCK As Timer) As Boolean
 Dim error As Boolean
 If ProfibusDisabled Then
   Request_IOIO_Data
+  Send_IOIO_Outputs
   ReadAllCards = True
   Exit Function
 End If
