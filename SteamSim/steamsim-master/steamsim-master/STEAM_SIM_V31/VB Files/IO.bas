@@ -363,6 +363,46 @@ Private Sub Request_IOIO_Data()
 
 End Sub
 
+Public Sub Send_IOIO_Inputs()
+    ' One-shot push of the snapshot's expected input state to the Python server.
+    ' Called from the snapshot-load path so the server's STATE["ain"]/STATE["din"]
+    ' reflect "what hardware should look like" at the moment the snapshot was taken.
+    ' Subsequent slider drags in the browser then create real, meaningful mismatches
+    ' on the SnapCompare page.
+    On Error Resume Next
+    Set ioioInHttp = Nothing
+    On Error GoTo 0
+
+    ' Pull the expected values from Fortran into the Reload arrays.
+    Call get_AI_Reloads(VB_AI_Reload(0))
+    Call get_DI_Reloads(VB_DI_Reload(0))
+
+    Set ioioInHttp = New MSXML2.XMLHTTP
+
+    Dim ainParts() As String
+    ReDim ainParts(0 To UBound(VB_AI_Reload))
+    Dim i As Long
+    For i = 0 To UBound(VB_AI_Reload)
+        ainParts(i) = CStr(VB_AI_Reload(i))
+    Next i
+
+    Dim dinParts() As String
+    ReDim dinParts(0 To UBound(VB_DI_Reload))
+    For i = 0 To UBound(VB_DI_Reload)
+        dinParts(i) = CStr(VB_DI_Reload(i))
+    Next i
+
+    Dim body As String
+    body = "ain=" & Join(ainParts, ",") & "&din=" & Join(dinParts, ",")
+
+    On Error Resume Next
+    ioioInHttp.Open "POST", IOIO_INPUTS_URL, True
+    ioioInHttp.setRequestHeader "Content-Type", "application/x-www-form-urlencoded"
+    ioioInHttp.send body
+    On Error GoTo 0
+
+End Sub
+
 Private Sub Send_IOIO_Outputs()
     ' Push A_OUTPUT and D_OUTPUT to the Python server. Fire-and-forget async POST: we
     ' don't care about the response, and abandoning a previous in-flight request is

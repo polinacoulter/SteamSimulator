@@ -167,6 +167,13 @@ class SimpleHandler(BaseHTTPRequestHandler):
             self.handle_ioio_outputs(form)
             return
 
+        if route == "/ioio/inputs":
+            # VB pushes the snapshot's expected A_INPUT and D_INPUT here once on
+            # snapshot load, so the server reflects "what hardware should look like"
+            # at the moment the snapshot was taken.
+            self.handle_ioio_inputs(form)
+            return
+
         self.send_not_found()
 
     def handle_read(self, query):
@@ -311,6 +318,11 @@ class SimpleHandler(BaseHTTPRequestHandler):
     def handle_ioio_outputs(self, form):
         self.apply_output_csv("aout", form.get("aout", ""))
         self.apply_output_csv("dout", form.get("dout", ""))
+        self.send_text_response("ok", 200)
+
+    def handle_ioio_inputs(self, form):
+        self.apply_output_csv("ain", form.get("ain", ""))
+        self.apply_output_csv("din", form.get("din", ""))
         self.send_text_response("ok", 200)
 
     def apply_output_csv(self, array_name, csv):
@@ -959,6 +971,7 @@ def main():
     print("  GET  /api/digital")
     print("  GET  /ioio/status   (combined ain/aout/din/dout for VB6 client)")
     print("  POST /ioio/outputs  (VB6 pushes its A_OUTPUT and D_OUTPUT here)")
+    print("  POST /ioio/inputs   (VB6 pushes snapshot's expected A_INPUT/D_INPUT here)")
     print("  POST /api/set_analog?array=ain&index=0&value=123")
     print("  POST /api/set_digital?array=dout&index=0&value=2")
     print("Array lengths:")

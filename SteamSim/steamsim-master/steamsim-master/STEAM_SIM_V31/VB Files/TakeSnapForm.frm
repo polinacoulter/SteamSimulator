@@ -994,7 +994,12 @@ Else
             ' === 23/08/02  (Read from the file c:\Steam_Sim\Text\Constants.txt ) ===
             Call SET_Constants
 
-                
+            ' Push the snapshot's expected analog/digital input state to the Python
+            ' server so the simulated hardware is a perfect match for the snapshot.
+            ' Subsequent browser slider drags then surface as real mismatches on the
+            ' SnapCompare page — and confirms the VB->Python write path works.
+            Call Send_IOIO_Inputs
+
         '25/10/99  check if any DIs or AI's unmatched (in on-line only)
         '14/01/00 stsrt immedidtely if PTT
          If PTT Then
