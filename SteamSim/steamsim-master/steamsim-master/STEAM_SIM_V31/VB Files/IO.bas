@@ -350,11 +350,18 @@ Private Sub Request_IOIO_Data()
     ' MSXML2.XMLHTTP shares the WinINet cache (same one IE uses). Without a unique
     ' URL per request plus no-cache headers, identical GETs after the first 200 are
     ' served from cache and never reach the network — polling silently freezes.
+    ' A short ?_=N counter alone wasn't enough on XP — WinINet sometimes ignores
+    ' simple query strings for cache keying. Combining Timer (seconds-since-midnight
+    ' as a Single, e.g. 45123.234) with a per-call counter gives every URL
+    ' millisecond-level entropy that no cache layer can collapse.
     Static cacheBuster As Long
     cacheBuster = cacheBuster + 1
 
+    Dim cacheBusterUrl As String
+    cacheBusterUrl = IOIO_STATUS_URL & "?t=" & CStr(Timer) & "&n=" & CStr(cacheBuster)
+
     On Error Resume Next
-    ioioXmlHttp.Open "GET", IOIO_STATUS_URL & "?_=" & CStr(cacheBuster), True
+    ioioXmlHttp.Open "GET", cacheBusterUrl, True
     ioioXmlHttp.setRequestHeader "Cache-Control", "no-cache"
     ioioXmlHttp.setRequestHeader "Pragma", "no-cache"
     ioioXmlHttp.OnReadyStateChange = MyIOIOReadyStateHandler        ' Assign the wrapper class object to onreadystatechange.
