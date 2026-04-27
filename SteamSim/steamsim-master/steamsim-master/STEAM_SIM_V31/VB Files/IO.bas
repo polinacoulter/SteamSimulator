@@ -347,9 +347,16 @@ Private Sub Request_IOIO_Data()
         Set MyIOIOReadyStateHandler = New IOIOReadyStateHandler
     End If
 
+    ' MSXML2.XMLHTTP shares the WinINet cache (same one IE uses). Without a unique
+    ' URL per request plus no-cache headers, identical GETs after the first 200 are
+    ' served from cache and never reach the network — polling silently freezes.
+    Static cacheBuster As Long
+    cacheBuster = cacheBuster + 1
+
     On Error Resume Next
-    ioioXmlHttp.Open "GET", IOIO_STATUS_URL, True
-    ioioXmlHttp.setRequestHeader "Content-type", "text/xml"
+    ioioXmlHttp.Open "GET", IOIO_STATUS_URL & "?_=" & CStr(cacheBuster), True
+    ioioXmlHttp.setRequestHeader "Cache-Control", "no-cache"
+    ioioXmlHttp.setRequestHeader "Pragma", "no-cache"
     ioioXmlHttp.OnReadyStateChange = MyIOIOReadyStateHandler        ' Assign the wrapper class object to onreadystatechange.
     ioioXmlHttp.send
     On Error GoTo 0
