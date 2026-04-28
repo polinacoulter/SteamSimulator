@@ -39,39 +39,52 @@ STATE = {
 }
 
 
-def extract_ain_from_pi_json(text):
+def extract_inputs_from_pi_json(text):
     # Pi response is a JSON array of pin objects:
     #   {"id":43,"name":"Port Rudder Control","type":"AIN","status":0.5097,"calibrated":0.0}
-    # We use status (0.0-1.0 normalized) scaled to byte 0-255. The "calibrated"
+    #   {"id":15,"name":"Stbd Override","type":"DIN","status":0.0,"calibrated":0.0}
+    # AIN: status (0.0-1.0 normalized) scaled to byte 0-255. The "calibrated"
     # field exists but is unreliable (sometimes negative, sometimes unscaled).
+    # DIN: status is 0.0 or 1.0; threshold for safety against noisy floats.
+    # Returns (ain_values, din_values) where each is {id: value}.
     try:
         data = json.loads(text)
     except (ValueError, TypeError):
-        return {}
+        return {}, {}
     if not isinstance(data, list):
-        return {}
+        return {}, {}
 
-    result = {}
+    ain_values = {}
+    din_values = {}
     for entry in data:
         if not isinstance(entry, dict):
             continue
-        if entry.get("type") != "AIN":
-            continue
+        type_str = entry.get("type")
         idx = entry.get("id")
         status = entry.get("status")
         if not isinstance(idx, int) or status is None:
             continue
-        try:
-            byte_value = int(round(float(status) * 255))
-        except (ValueError, TypeError):
-            continue
-        if byte_value < 0:
-            byte_value = 0
-        elif byte_value > 255:
-            byte_value = 255
-        if 0 <= idx < len(STATE["ain"]):
-            result[idx] = byte_value
-    return result
+
+        if type_str == "AIN":
+            try:
+                byte_value = int(round(float(status) * 255))
+            except (ValueError, TypeError):
+                continue
+            if byte_value < 0:
+                byte_value = 0
+            elif byte_value > 255:
+                byte_value = 255
+            if 0 <= idx < len(STATE["ain"]):
+                ain_values[idx] = byte_value
+        elif type_str == "DIN":
+            try:
+                bit_value = 1 if float(status) > 0.5 else 0
+            except (ValueError, TypeError):
+                continue
+            if 0 <= idx < len(STATE["din"]):
+                din_values[idx] = bit_value
+
+    return ain_values, din_values
 
 
 def poll_pi_loop():
@@ -82,11 +95,14 @@ def poll_pi_loop():
             req = Request(PI_URL, headers={"Cache-Control": "no-cache"})
             resp = urlopen(req, timeout=PI_REQUEST_TIMEOUT_S)
             text = resp.read().decode("utf-8", errors="replace")
-            values = extract_ain_from_pi_json(text)
-            for idx, val in values.items():
+            ain_values, din_values = extract_inputs_from_pi_json(text)
+            for idx, val in ain_values.items():
                 STATE["ain"][idx] = val
-            if values and not first_success_logged:
-                print("Pi polling: first successful response, %d AIN pins captured" % len(values))
+            for idx, val in din_values.items():
+                STATE["din"][idx] = val
+            if (ain_values or din_values) and not first_success_logged:
+                print("Pi polling: first successful response, %d AIN + %d DIN pins captured"
+                      % (len(ain_values), len(din_values)))
                 first_success_logged = True
         except Exception:
             # Pi unreachable / malformed response. Don't spam the console; just
