@@ -627,6 +627,10 @@ function onSliderChange(arrayName, index, sliderObj) {
     var value = parseInt(sliderObj.value, 10);
     updateSliderAndLabel(arrayName, index, value);
     setAnalogValue(arrayName, index, value);
+    // Release focus so subsequent polls can move the thumb again. Without this,
+    // the just-dragged slider stays the activeElement and updateSliderAndLabel
+    // skips its visual update until the user clicks elsewhere.
+    sliderObj.blur();
 }
 
 function changePollMs() {
@@ -849,6 +853,11 @@ function onDigitalChange(arrayName, index, selObj) {
     var value = parseInt(selObj.value, 10);
     updateDigitalControl(arrayName, index, value);
     setDigitalValue(arrayName, index, value);
+    // Release focus so polling resumes immediately. pollDigital() bails out
+    // entirely whenever any <select> is the active element to avoid repaint
+    // flicker mid-interaction; without blur() here, polling stays paused
+    // until the user clicks somewhere else.
+    selObj.blur();
 }
 
 function changePollMs() {
