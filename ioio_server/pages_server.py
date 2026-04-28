@@ -1,7 +1,16 @@
+import json
+import threading
+import time
+
 try:
     from http.server import BaseHTTPRequestHandler, HTTPServer
 except ImportError:
     from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+
+try:
+    from urllib.request import urlopen, Request
+except ImportError:
+    from urllib2 import urlopen, Request
 
 HOST = "127.0.0.1"
 PORT = 8080
@@ -14,12 +23,76 @@ D_OUTPUT = 4001
 MIN_POLL_MS = 50
 DEFAULT_POLL_MS = 500
 
+# Upstream hardware (Raspberry Pi). Set PI_URL to the Pi's status endpoint to
+# enable a background thread that polls the Pi and writes real-hardware analog
+# values into STATE["ain"]. Set to None to disable (browser sliders remain the
+# only source of analog input — useful for development without the Pi).
+PI_URL = "http://192.168.100.202:8080/ioio/status"
+PI_POLL_MS = 500
+PI_REQUEST_TIMEOUT_S = 2.0
+
 STATE = {
     "ain": [0] * A_INPUT,
     "aout": [0] * A_OUTPUT,
     "din": [0] * D_INPUT,
     "dout": [0] * D_OUTPUT,
 }
+
+
+def extract_ain_from_pi_json(text):
+    # Pi response is a JSON array of pin objects:
+    #   {"id":43,"name":"Port Rudder Control","type":"AIN","status":0.5097,"calibrated":0.0}
+    # We use status (0.0-1.0 normalized) scaled to byte 0-255. The "calibrated"
+    # field exists but is unreliable (sometimes negative, sometimes unscaled).
+    try:
+        data = json.loads(text)
+    except (ValueError, TypeError):
+        return {}
+    if not isinstance(data, list):
+        return {}
+
+    result = {}
+    for entry in data:
+        if not isinstance(entry, dict):
+            continue
+        if entry.get("type") != "AIN":
+            continue
+        idx = entry.get("id")
+        status = entry.get("status")
+        if not isinstance(idx, int) or status is None:
+            continue
+        try:
+            byte_value = int(round(float(status) * 255))
+        except (ValueError, TypeError):
+            continue
+        if byte_value < 0:
+            byte_value = 0
+        elif byte_value > 255:
+            byte_value = 255
+        if 0 <= idx < len(STATE["ain"]):
+            result[idx] = byte_value
+    return result
+
+
+def poll_pi_loop():
+    print("Pi polling: %s every %d ms" % (PI_URL, PI_POLL_MS))
+    first_success_logged = False
+    while True:
+        try:
+            req = Request(PI_URL, headers={"Cache-Control": "no-cache"})
+            resp = urlopen(req, timeout=PI_REQUEST_TIMEOUT_S)
+            text = resp.read().decode("utf-8", errors="replace")
+            values = extract_ain_from_pi_json(text)
+            for idx, val in values.items():
+                STATE["ain"][idx] = val
+            if values and not first_success_logged:
+                print("Pi polling: first successful response, %d AIN pins captured" % len(values))
+                first_success_logged = True
+        except Exception:
+            # Pi unreachable / malformed response. Don't spam the console; just
+            # try again next cycle. Browser sliders still work as a fallback.
+            pass
+        time.sleep(PI_POLL_MS / 1000.0)
 
 
 def parse_query_string(path):
@@ -988,6 +1061,13 @@ def main():
     print("  aout =", A_OUTPUT)
     print("  din  =", D_INPUT)
     print("  dout =", D_OUTPUT)
+
+    if PI_URL:
+        pi_thread = threading.Thread(target=poll_pi_loop)
+        pi_thread.daemon = True
+        pi_thread.start()
+    else:
+        print("Pi polling: disabled (PI_URL is None)")
 
     server = HTTPServer((HOST, PORT), SimpleHandler)
     server.serve_forever()
