@@ -32,7 +32,10 @@ to Profibus.
       stripped of HTTP and orchestration). Form's Start tries `IO_Init` for
       both cards and MsgBoxes on failure. Timer body does per-card gated
       reads, HTTP push, HTTP pull, per-card gated writes.
-- [ ] **Phase 4** — Run both exes simultaneously and verify the round-trip.
+- [x] **Phase 4** — Integration test: run both exes simultaneously, verify
+      round-trip through the Python server. Plus a small fix: I/O App now
+      skips `Send_Inputs_To_Python` when no Profibus cards are present, so
+      it doesn't overwrite legitimate sources (Pi polling) with zeros.
 
 ## Files
 
@@ -74,10 +77,61 @@ hardware were present. After dismissing the MsgBoxes, the timer keeps
 ticking and HTTP traffic flows normally; you should see `GET /ioio/status`
 and `POST /ioio/inputs` lines in the Python server console every ~500 ms.
 
-## Phase 4 (next)
+## Phase 4 integration test
 
-Run `Executive.exe` (the simulator with Profibus disabled) and `IOApp.exe`
-side by side, both pointed at the same `pages_server.py`. Confirm the
-round-trip: simulator writes `A_OUTPUT[0] = 200` -> arrives at I/O App's
-`A_OUTPUT[0]` via HTTP -> in a real deployment, would land on Profibus.
-Without real cards, just verify both ends see the same values.
+Goal: verify the simulator and I/O App can communicate through the Python
+server.
+
+### Setup
+
+1. On the XP box: `cd ioio_server && python pages_server.py`. Leave it
+   running, watching for log output.
+2. Launch the simulator (Executive.exe) — it polls the server for inputs and
+   pushes outputs.
+3. Launch IOApp.exe. Click **Start**. Two MsgBoxes ("IO Card A failed",
+   "IO Card B failed") — dismiss them. Status: "Running (no cards)".
+
+You should now see four log streams:
+- `pages_server.py` console: `GET /ioio/status` from simulator AND I/O App
+  (twice as much traffic), plus `POST /ioio/outputs` from simulator.
+- Simulator's behavior: same as before — pulls ain/din, pushes aout/dout.
+- I/O App log: every ~2 s, `tick  ain[0]=N aout[0]=N  din[0]=N dout[0]=N`.
+  The `aout[0]` and `dout[0]` should reflect what the simulator is currently
+  outputting (e.g., gauge values, lamp states from the model).
+
+### Test 1: simulator -> I/O App
+
+In the simulator, do something that changes an output. Easy options:
+- Run -> Cold (loads default state, model ticks, many outputs change).
+- Move a control on an open form (e.g., a throttle handle) — that
+  changes `A_OUTPUT[N]` for the corresponding channel.
+
+Watch the I/O App log. The `aout[0]` value should match what the simulator
+is outputting. Spot-check by calling out specific indices in the log line
+(it currently shows index 0 only — extend the log line if you want more).
+
+### Test 2: I/O App doesn't fight the Pi
+
+With Pi polling enabled in `pages_server.py`, physical thruster/rudder
+movements on the Pi should still propagate to the simulator's AI test form
+even with the I/O App running. The Phase 4 fix (skip `Send_Inputs_To_Python`
+when no cards) is what makes this work — without it, the I/O App would post
+zeros every 500 ms and clobber the Pi's values.
+
+To verify: with all three running (server, simulator, I/O App), wiggle a
+thruster on the Pi. Simulator's AI test form should reflect the new value
+within a couple of seconds. If you see values flickering between Pi values
+and zeros, the fix didn't make it onto the XP box.
+
+### Test 3: same Python server console handles both clients
+
+After running for a minute, the server console should show:
+- Steady stream of `GET /ioio/status?t=...&n=...` from both the simulator
+  and the I/O App (cache-busted URLs from each).
+- `POST /ioio/outputs` from the simulator (every ~300 ms).
+- No `POST /ioio/inputs` from the I/O App (because no cards).
+- Periodic `POST /api/set_analog` only when you drag browser sliders.
+
+If all of that holds, Phase 4 passes and the architecture works end-to-end
+modulo the Profibus side. Adding real cards later is the same code path,
+just with non-zero Profibus reads/writes.

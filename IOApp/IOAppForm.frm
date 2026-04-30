@@ -144,7 +144,12 @@ Private Sub Timer1_Timer()
     End If
 
     ' --- Push inputs to the Python server ---
-    Send_Inputs_To_Python
+    ' Only POST if we have at least one card; otherwise we'd be sending zeros
+    ' that overwrite legitimate sources (e.g., the Pi polling thread on the
+    ' Python server, which also writes into STATE["ain"]/STATE["din"]).
+    If g_CardA_OK Or g_CardB_OK Then
+        Send_Inputs_To_Python
+    End If
 
     ' --- Pull outputs from the Python server (async; previous tick's response
     '     is already in A_OUTPUT/D_OUTPUT, so we use that this tick) ---
