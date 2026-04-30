@@ -91,8 +91,13 @@ Private Sub cmdStop_Click()
 End Sub
 
 Private Sub Timer1_Timer()
-    ' Phase 1 heartbeat. Phase 2 replaces this with HTTP traffic.
-    AppendLog "tick"
+    ' Phase 2: pull outputs from the Python server, push (currently zero) inputs.
+    Get_Outputs_From_Python
+    Send_Inputs_To_Python
+
+    ' Spot-check what we received. Phase 3 will write these to Profibus.
+    AppendLog "poll  aout[0]=" & A_OUTPUT(0) & " aout[1]=" & A_OUTPUT(1) & _
+              "  dout[0]=" & D_OUTPUT(0) & " dout[1]=" & D_OUTPUT(1)
 End Sub
 
 Private Sub AppendLog(msg As String)
