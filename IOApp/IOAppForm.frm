@@ -85,6 +85,10 @@ Private Sub Form_Load()
 End Sub
 
 Private Sub cmdStart_Click()
+    ' Reload IOApp.cfg every Start click so edits take effect without restart.
+    LoadConfig
+    AppendLog "Config loaded: " & ConfigSummary()
+
     AppendLog "Initializing Profibus cards..."
 
     Dim Status As Integer

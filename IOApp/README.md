@@ -45,9 +45,62 @@ to Profibus.
 | `IOAppForm.frm` | Main (only) form: Start/Stop, log, status, timer |
 | `IOTypes_App.bas` | Arrays, address constants, card flags, URL constants |
 | `IOAppNet.bas` | `Get_Outputs_From_Python` (async GET), `Send_Inputs_To_Python` (async POST) |
-| `IOAppHandler.cls` | Async response handler — parses `aout=`/`dout=` into arrays |
-| `IOAppProfibus.bas` | `Get_A_Input`/`Get_D_input`/`Set_A_Output`/`Set_D_Output` wrappers |
-| `appio.bas` | DLL declarations (`IO_Init`, `IO_ReadIByte`, etc.) — verbatim from simulator |
+| `IOAppHandler.cls` | Async response handler - parses `aout=`/`dout=` into arrays |
+| `IOAppProfibus.bas` | `Get_A_Input`/`Get_D_input`/`Set_A_Output`/`Set_D_Output` wrappers, with per-block skip-list checks |
+| `IOAppConfig.bas` | Loads `IOApp.cfg` and answers `IsBlockSkipped(...)` |
+| `IOApp.cfg` | Per-category lists of Profibus block addresses to skip |
+| `appio.bas` | DLL declarations (`IO_Init`, `IO_ReadIByte`, etc.) - verbatim from simulator |
+
+## Configuration: `IOApp.cfg`
+
+The I/O App reads `IOApp.cfg` from the same folder as the EXE on every
+**Start** click (not just at app load), so you can edit the file and
+re-Start to apply changes without quitting VB6.
+
+Each line is `key=value`. Lines starting with `#` and blank lines are
+ignored. Values are either:
+
+- *empty* - nothing skipped, normal operation
+- `N[,N,...]` - skip these specific block addresses
+- `all` - skip every block in this category
+
+Example: AI block 52 on Card A is failing physically:
+
+```
+cardA_ai_skip=52
+```
+
+Multiple blocks fail:
+
+```
+cardA_ai_skip=52,53,54
+```
+
+Whole category disabled (Richard's "eventually all analog input blocks"
+case):
+
+```
+cardA_ai_skip=all
+```
+
+The eight keys map to (card, IO direction) pairs:
+
+| Key | Card A blocks | Card B blocks |
+|---|---|---|
+| `cardA_ai_skip` / `cardB_ai_skip` | 50-54 | 20-21 |
+| `cardA_di_skip` / `cardB_di_skip` | 80-93 | 45-56 |
+| `cardA_ao_skip` / `cardB_ao_skip` | 1-42 | 1-18 |
+| `cardA_do_skip` / `cardB_do_skip` | 60-78 | 25-37 |
+
+When you click **Start**, the log shows what was loaded:
+```
+Config loaded: AI A=52 B=none  DI A=none B=none  AO A=none B=none  DO A=none B=none
+```
+
+A block listed in a skip list is silently passed over inside the read/write
+loop - no Profibus call, no error, no array update. Other blocks in the
+same category continue to work normally. This is exactly the failure-mode
+recovery Richard described.
 
 ## Opening on the XP box
 
