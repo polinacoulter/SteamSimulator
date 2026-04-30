@@ -63,15 +63,21 @@ Attribute VB_Exposed = False
 
 Option Explicit
 
-' Phase 1: UI scaffolding only. No HTTP, no Profibus yet.
-' Start enables a heartbeat timer that logs "tick" to the listbox.
-' Stop disables the timer. Lays the groundwork for Phases 2 (HTTP)
-' and 3 (Profibus reads/writes).
+' Phase 3: Profibus + HTTP.
+' Start: try to initialize both Profibus cards (IO_Init); on failure show a
+'        MsgBox like the original simulator did, but keep the timer running
+'        in HTTP-only mode so the I/O App is still useful on dev machines
+'        without Profibus hardware.
+' Timer: per-card gated reads from Profibus, push to Python, pull from
+'        Python, per-card gated writes to Profibus.
 '
-' We use a VB.ListBox for the log instead of a multi-line VB.TextBox
-' because multi-line TextBoxes require a companion .frx file in VB6.
+' We use a VB.ListBox for the log instead of a multi-line VB.TextBox because
+' multi-line TextBoxes require a companion .frx file in VB6.
 
 Private Const MAX_LOG_LINES As Long = 1000
+Private Const STATUS_LOG_EVERY_N_TICKS As Long = 4
+
+Private g_TickCount As Long
 
 Private Sub Form_Load()
     AppendLog "I/O App started"
@@ -79,9 +85,35 @@ Private Sub Form_Load()
 End Sub
 
 Private Sub cmdStart_Click()
-    AppendLog "Start clicked"
+    AppendLog "Initializing Profibus cards..."
+
+    Dim Status As Integer
+    g_CardA_OK = IO_Init(WINCARD_A, Status)
+    If g_CardA_OK Then
+        AppendLog "Card A initialized OK"
+    Else
+        AppendLog "Card A failed to initialize, status=" & Status
+        ' Same MsgBox the original simulator showed when a card was missing.
+        MsgBox "IO Card A failed to initialise", vbCritical, "Error"
+    End If
+
+    g_CardB_OK = IO_Init(WINCARD_B, Status)
+    If g_CardB_OK Then
+        AppendLog "Card B initialized OK"
+    Else
+        AppendLog "Card B failed to initialize, status=" & Status
+        MsgBox "IO Card B failed to initialise", vbCritical, "Error"
+    End If
+
+    If g_CardA_OK Or g_CardB_OK Then
+        AppendLog "Starting I/O loop"
+        lblStatusValue.Caption = "Running"
+    Else
+        AppendLog "No Profibus cards available; HTTP-only mode (zeros for ain/din, no Profibus writes)"
+        lblStatusValue.Caption = "Running (no cards)"
+    End If
+
     Timer1.Enabled = True
-    lblStatusValue.Caption = "Running"
 End Sub
 
 Private Sub cmdStop_Click()
@@ -91,16 +123,59 @@ Private Sub cmdStop_Click()
 End Sub
 
 Private Sub Timer1_Timer()
-    ' Phase 2: pull outputs from the Python server, push (currently zero) inputs.
-    Get_Outputs_From_Python
+    g_TickCount = g_TickCount + 1
+
+    ' --- Read inputs from Profibus into the arrays ---
+    If g_CardA_OK Then
+        If Not Get_A_Input(WINCARD_A, A_INPUT_START_ADDR, A_INPUT_END_ADDR) Then
+            AppendLog "Card A AI read failed"
+        End If
+        If Not Get_D_input(WINCARD_A, D_INPUT_START_ADDR, D_INPUT_END_ADDR) Then
+            AppendLog "Card A DI read failed"
+        End If
+    End If
+    If g_CardB_OK Then
+        If Not Get_A_Input(WINCARD_B, A_INPUT_START_ADDR_B, A_INPUT_END_ADDR_B) Then
+            AppendLog "Card B AI read failed"
+        End If
+        If Not Get_D_input(WINCARD_B, D_INPUT_START_ADDR_B, D_INPUT_END_ADDR_B) Then
+            AppendLog "Card B DI read failed"
+        End If
+    End If
+
+    ' --- Push inputs to the Python server ---
     Send_Inputs_To_Python
 
-    ' Spot-check what we received. Phase 3 will write these to Profibus.
-    AppendLog "poll  aout[0]=" & A_OUTPUT(0) & " aout[1]=" & A_OUTPUT(1) & _
-              "  dout[0]=" & D_OUTPUT(0) & " dout[1]=" & D_OUTPUT(1)
+    ' --- Pull outputs from the Python server (async; previous tick's response
+    '     is already in A_OUTPUT/D_OUTPUT, so we use that this tick) ---
+    Get_Outputs_From_Python
+
+    ' --- Write outputs to Profibus ---
+    If g_CardA_OK Then
+        If Not Set_A_Output(WINCARD_A, A_OUTPUT_START_ADDR, A_OUTPUT_END_ADDR) Then
+            AppendLog "Card A AO write failed"
+        End If
+        If Not Set_D_Output(WINCARD_A, D_OUTPUT_START_ADDR, D_OUTPUT_END_ADDR) Then
+            AppendLog "Card A DO write failed"
+        End If
+    End If
+    If g_CardB_OK Then
+        If Not Set_A_Output(WINCARD_B, A_OUTPUT_START_ADDR_B, A_OUTPUT_END_ADDR_B) Then
+            AppendLog "Card B AO write failed"
+        End If
+        If Not Set_D_Output(WINCARD_B, D_OUTPUT_START_ADDR_B, D_OUTPUT_END_ADDR_B) Then
+            AppendLog "Card B DO write failed"
+        End If
+    End If
+
+    ' Periodic status line (don't log every tick - too noisy at 500 ms).
+    If g_TickCount Mod STATUS_LOG_EVERY_N_TICKS = 0 Then
+        AppendLog "tick  ain[0]=" & A_INPUT(0) & " aout[0]=" & A_OUTPUT(0) & _
+                  "  din[0]=" & D_INPUT(0) & " dout[0]=" & D_OUTPUT(0)
+    End If
 End Sub
 
-Private Sub AppendLog(msg As String)
+Public Sub AppendLog(msg As String)
     ' Avoid the name "Log" because VB6's built-in Log() is the natural logarithm.
     Dim line As String
     line = Format$(Now, "hh:nn:ss") & "  " & msg
