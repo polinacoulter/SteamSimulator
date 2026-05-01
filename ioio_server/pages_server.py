@@ -39,33 +39,39 @@ STATE = {
 }
 
 
-def extract_inputs_from_pi_json(text):
+def extract_pi_pins_from_json(text):
     # Pi response is a JSON array of pin objects:
     #   {"id":43,"name":"Port Rudder Control","type":"AIN","status":0.5097,"calibrated":0.0}
     #   {"id":15,"name":"Stbd Override","type":"DIN","status":0.0,"calibrated":0.0}
+    #   {"id":1,"name":"Lamp 1","type":"DOUT","status":1.0,"calibrated":1.0}
     # AIN: status (0.0-1.0 normalized) scaled to byte 0-255. The "calibrated"
     # field exists but is unreliable (sometimes negative, sometimes unscaled).
     # DIN: status is 0.0 or 1.0; threshold for safety against noisy floats.
-    # Returns (ain_values, din_values) where each is {id: value}.
+    # DOUT/AOUT: we don't read these (they're things the Pi drives), but we
+    # capture the pin ids so the writeback path (/ioio/trigger) knows which
+    # pins to push.
+    # Returns (ain_values, din_values, output_pin_types) where output_pin_types
+    # maps pin_id -> "DOUT" or "AOUT".
     try:
         data = json.loads(text)
     except (ValueError, TypeError):
-        return {}, {}
+        return {}, {}, {}
     if not isinstance(data, list):
-        return {}, {}
+        return {}, {}, {}
 
     ain_values = {}
     din_values = {}
+    output_pin_types = {}
     for entry in data:
         if not isinstance(entry, dict):
             continue
         type_str = entry.get("type")
         idx = entry.get("id")
         status = entry.get("status")
-        if not isinstance(idx, int) or status is None:
+        if not isinstance(idx, int):
             continue
 
-        if type_str == "AIN":
+        if type_str == "AIN" and status is not None:
             try:
                 byte_value = int(round(float(status) * 255))
             except (ValueError, TypeError):
@@ -76,15 +82,17 @@ def extract_inputs_from_pi_json(text):
                 byte_value = 255
             if 0 <= idx < len(STATE["ain"]):
                 ain_values[idx] = byte_value
-        elif type_str == "DIN":
+        elif type_str == "DIN" and status is not None:
             try:
                 bit_value = 1 if float(status) > 0.5 else 0
             except (ValueError, TypeError):
                 continue
             if 0 <= idx < len(STATE["din"]):
                 din_values[idx] = bit_value
+        elif type_str == "DOUT" or type_str == "AOUT":
+            output_pin_types[idx] = type_str
 
-    return ain_values, din_values
+    return ain_values, din_values, output_pin_types
 
 
 def load_devices_config():
@@ -122,23 +130,38 @@ def load_devices_config():
 
 
 def poll_device_loop(device):
-    """Per-device polling thread. One spawned per entry in pages_server.cfg.json."""
+    """Per-device polling thread. One spawned per entry in pages_server.cfg.json.
+
+    Each cycle:
+      1. GET /ioio/status  -> read AIN/DIN into STATE, learn DOUT/AOUT pin ids.
+      2. POST /ioio/trigger for each output pin whose value changed since last
+         push. Source for the API: lightClient APITrigger.java.
+    """
     name = device["name"]
     url = device["url"]
     poll_ms = device["poll_ms"]
     timeout_s = device["timeout_s"]
+    board = device.get("board", 0)
+    # Derive the trigger URL from the status URL by swapping the last segment.
+    # If a custom write_url is given in the config, use that instead.
+    write_url = device.get("write_url") or url.replace("/ioio/status", "/ioio/trigger")
+
     print("Device polling [%s]: %s every %d ms" % (name, url, poll_ms))
     first_success_logged = False
+    output_pin_types = {}
+    last_pushed = {}
+
     while True:
         try:
             req = Request(url, headers={"Cache-Control": "no-cache"})
             resp = urlopen(req, timeout=timeout_s)
             text = resp.read().decode("utf-8", errors="replace")
-            ain_values, din_values = extract_inputs_from_pi_json(text)
+            ain_values, din_values, output_types_seen = extract_pi_pins_from_json(text)
             for idx, val in ain_values.items():
                 STATE["ain"][idx] = val
             for idx, val in din_values.items():
                 STATE["din"][idx] = val
+            output_pin_types.update(output_types_seen)
             if (ain_values or din_values) and not first_success_logged:
                 print("Device polling [%s]: first response, %d AIN + %d DIN pins captured"
                       % (name, len(ain_values), len(din_values)))
@@ -148,7 +171,50 @@ def poll_device_loop(device):
             # just try again next cycle. Other devices and browser sliders
             # continue to work normally.
             pass
+
+        # Push changed outputs back to the Pi.
+        push_outputs_to_device(write_url, board, output_pin_types, last_pushed, timeout_s)
+
         time.sleep(poll_ms / 1000.0)
+
+
+def push_outputs_to_device(write_url, board, output_pin_types, last_pushed, timeout_s):
+    """For each known output pin, POST /ioio/trigger if the value changed.
+
+    Single-pin-per-request is a Pi-side limitation (see APITrigger.java).
+    Steady-state cost is near zero because we only POST on change.
+    """
+    for pin_id, pin_type in output_pin_types.items():
+        if pin_type == "DOUT":
+            if not (0 <= pin_id < len(STATE["dout"])):
+                continue
+            target = 1.0 if STATE["dout"][pin_id] else 0.0
+        elif pin_type == "AOUT":
+            if not (0 <= pin_id < len(STATE["aout"])):
+                continue
+            target = STATE["aout"][pin_id] / 255.0
+        else:
+            continue
+
+        if last_pushed.get(pin_id) == target:
+            continue
+
+        try:
+            body = ("board=%d&pin=%d&state=%g" % (board, pin_id, target)).encode("utf-8")
+            req = Request(
+                write_url,
+                data=body,
+                headers={
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Cache-Control": "no-cache",
+                },
+            )
+            resp = urlopen(req, timeout=timeout_s)
+            resp.read()
+            last_pushed[pin_id] = target
+        except Exception:
+            # Pi unreachable or rejected; try again next cycle.
+            pass
 
 
 def parse_query_string(path):
