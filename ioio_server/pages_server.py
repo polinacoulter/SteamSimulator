@@ -23,13 +23,13 @@ D_OUTPUT = 4001
 MIN_POLL_MS = 50
 DEFAULT_POLL_MS = 500
 
-# Upstream hardware (Raspberry Pi). Set PI_URL to the Pi's status endpoint to
-# enable a background thread that polls the Pi and writes real-hardware analog
-# values into STATE["ain"]. Set to None to disable (browser sliders remain the
-# only source of analog input — useful for development without the Pi).
-PI_URL = "http://192.168.100.202:8080/ioio/status"
-PI_POLL_MS = 500
-PI_REQUEST_TIMEOUT_S = 2.0
+# Upstream device list lives in pages_server.cfg.json next to this script.
+# Each device runs its own polling thread that fetches /ioio/status-style JSON
+# and writes AIN/DIN values into STATE. If the file is missing or empty, no
+# upstream polling happens (browser sliders remain the only source of analog
+# input, useful for development without any Pi).
+import os
+CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "pages_server.cfg.json")
 
 STATE = {
     "ain": [0] * A_INPUT,
@@ -87,13 +87,52 @@ def extract_inputs_from_pi_json(text):
     return ain_values, din_values
 
 
-def poll_pi_loop():
-    print("Pi polling: %s every %d ms" % (PI_URL, PI_POLL_MS))
+def load_devices_config():
+    """Read pages_server.cfg.json and return a normalized list of device dicts.
+
+    Each device dict has: name, url, poll_ms, timeout_s. Missing optional fields
+    get defaults. Devices without a url are dropped. Returns [] if the config
+    file is absent or malformed.
+    """
+    if not os.path.exists(CONFIG_PATH):
+        return []
+    try:
+        with open(CONFIG_PATH, "r") as f:
+            cfg = json.load(f)
+    except Exception as e:
+        print("pages_server.cfg.json: failed to load (%s); proceeding with no devices" % e)
+        return []
+    if not isinstance(cfg, dict):
+        return []
+    raw_devices = cfg.get("devices", [])
+    out = []
+    for d in raw_devices:
+        if not isinstance(d, dict):
+            continue
+        url = d.get("url")
+        if not url or not isinstance(url, str):
+            continue
+        out.append({
+            "name": d.get("name", url),
+            "url": url,
+            "poll_ms": int(d.get("poll_ms", 500)),
+            "timeout_s": float(d.get("timeout_s", 2.0)),
+        })
+    return out
+
+
+def poll_device_loop(device):
+    """Per-device polling thread. One spawned per entry in pages_server.cfg.json."""
+    name = device["name"]
+    url = device["url"]
+    poll_ms = device["poll_ms"]
+    timeout_s = device["timeout_s"]
+    print("Device polling [%s]: %s every %d ms" % (name, url, poll_ms))
     first_success_logged = False
     while True:
         try:
-            req = Request(PI_URL, headers={"Cache-Control": "no-cache"})
-            resp = urlopen(req, timeout=PI_REQUEST_TIMEOUT_S)
+            req = Request(url, headers={"Cache-Control": "no-cache"})
+            resp = urlopen(req, timeout=timeout_s)
             text = resp.read().decode("utf-8", errors="replace")
             ain_values, din_values = extract_inputs_from_pi_json(text)
             for idx, val in ain_values.items():
@@ -101,14 +140,15 @@ def poll_pi_loop():
             for idx, val in din_values.items():
                 STATE["din"][idx] = val
             if (ain_values or din_values) and not first_success_logged:
-                print("Pi polling: first successful response, %d AIN + %d DIN pins captured"
-                      % (len(ain_values), len(din_values)))
+                print("Device polling [%s]: first response, %d AIN + %d DIN pins captured"
+                      % (name, len(ain_values), len(din_values)))
                 first_success_logged = True
         except Exception:
-            # Pi unreachable / malformed response. Don't spam the console; just
-            # try again next cycle. Browser sliders still work as a fallback.
+            # Device unreachable / malformed response. Don't spam the console;
+            # just try again next cycle. Other devices and browser sliders
+            # continue to work normally.
             pass
-        time.sleep(PI_POLL_MS / 1000.0)
+        time.sleep(poll_ms / 1000.0)
 
 
 def parse_query_string(path):
@@ -1078,12 +1118,15 @@ def main():
     print("  din  =", D_INPUT)
     print("  dout =", D_OUTPUT)
 
-    if PI_URL:
-        pi_thread = threading.Thread(target=poll_pi_loop)
-        pi_thread.daemon = True
-        pi_thread.start()
+    devices = load_devices_config()
+    if devices:
+        print("Loaded %d upstream device(s) from %s" % (len(devices), CONFIG_PATH))
+        for device in devices:
+            t = threading.Thread(target=poll_device_loop, args=(device,))
+            t.daemon = True
+            t.start()
     else:
-        print("Pi polling: disabled (PI_URL is None)")
+        print("No upstream devices configured (pages_server.cfg.json missing or empty)")
 
     server = HTTPServer((HOST, PORT), SimpleHandler)
     server.serve_forever()

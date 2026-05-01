@@ -1,0 +1,11 @@
+{
+  "_comment": "Upstream device list. Each device runs its own polling thread that fetches /ioio/status-style JSON and writes AIN/DIN values into STATE. Add more entries to poll multiple Pis. Required: url. Optional: name (for logs), poll_ms (default 500), timeout_s (default 2.0).",
+  "devices": [
+    {
+      "name": "main_pi",
+      "url": "http://192.168.100.202:8080/ioio/status",
+      "poll_ms": 500,
+      "timeout_s": 2.0
+    }
+  ]
+}
