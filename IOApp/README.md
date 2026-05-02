@@ -137,7 +137,7 @@ server.
 
 ### Setup
 
-1. On the XP box: `cd ioio_server && python pages_server.py`. Leave it
+1. On the XP box: `cd ioio_server && python server.py`. Leave it
    running, watching for log output.
 2. Launch the simulator (Executive.exe) — it polls the server for inputs and
    pushes outputs.
@@ -145,7 +145,7 @@ server.
    "IO Card B failed") — dismiss them. Status: "Running (no cards)".
 
 You should now see four log streams:
-- `pages_server.py` console: `GET /ioio/status` from simulator AND I/O App
+- `server.py` console: `GET /ioio/status` from simulator AND I/O App
   (twice as much traffic), plus `POST /ioio/outputs` from simulator.
 - Simulator's behavior: same as before — pulls ain/din, pushes aout/dout.
 - I/O App log: every ~2 s, `tick  ain[0]=N aout[0]=N  din[0]=N dout[0]=N`.
@@ -165,7 +165,7 @@ is outputting. Spot-check by calling out specific indices in the log line
 
 ### Test 2: I/O App doesn't fight the Pi
 
-With Pi polling enabled in `pages_server.py`, physical thruster/rudder
+With Pi polling enabled in `server.py`, physical thruster/rudder
 movements on the Pi should still propagate to the simulator's AI test form
 even with the I/O App running. The Phase 4 fix (skip `Send_Inputs_To_Python`
 when no cards) is what makes this work — without it, the I/O App would post

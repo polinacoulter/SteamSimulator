@@ -23,13 +23,13 @@ D_OUTPUT = 4001
 MIN_POLL_MS = 50
 DEFAULT_POLL_MS = 500
 
-# Upstream device list lives in pages_server.cfg.json next to this script.
+# Upstream device list lives in server.cfg.json next to this script.
 # Each device runs its own polling thread that fetches /ioio/status-style JSON
 # and writes AIN/DIN values into STATE. If the file is missing or empty, no
 # upstream polling happens (browser sliders remain the only source of analog
 # input, useful for development without any Pi).
 import os
-CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "pages_server.cfg.json")
+CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "server.cfg.json")
 
 STATE = {
     "ain": [0] * A_INPUT,
@@ -96,7 +96,7 @@ def extract_pi_pins_from_json(text):
 
 
 def load_devices_config():
-    """Read pages_server.cfg.json and return a normalized list of device dicts.
+    """Read server.cfg.json and return a normalized list of device dicts.
 
     Each device dict has: name, url, poll_ms, timeout_s. Missing optional fields
     get defaults. Devices without a url are dropped. Returns [] if the config
@@ -108,7 +108,7 @@ def load_devices_config():
         with open(CONFIG_PATH, "r") as f:
             cfg = json.load(f)
     except Exception as e:
-        print("pages_server.cfg.json: failed to load (%s); proceeding with no devices" % e)
+        print("server.cfg.json: failed to load (%s); proceeding with no devices" % e)
         return []
     if not isinstance(cfg, dict):
         return []
@@ -130,7 +130,7 @@ def load_devices_config():
 
 
 def poll_device_loop(device):
-    """Per-device polling thread. One spawned per entry in pages_server.cfg.json.
+    """Per-device polling thread. One spawned per entry in server.cfg.json.
 
     Each cycle:
       1. GET /ioio/status  -> read AIN/DIN into STATE, learn DOUT/AOUT pin ids.
@@ -1206,7 +1206,7 @@ def main():
             t.daemon = True
             t.start()
     else:
-        print("No upstream devices configured (pages_server.cfg.json missing or empty)")
+        print("No upstream devices configured (server.cfg.json missing or empty)")
 
     server = HTTPServer((HOST, PORT), SimpleHandler)
     server.serve_forever()
