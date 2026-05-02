@@ -150,8 +150,10 @@ def poll_device_loop(device):
     first_success_logged = False
     output_pin_types = {}
     last_pushed = {}
+    flash_on = False
 
     while True:
+        flash_on = not flash_on
         try:
             req = Request(url, headers={"Cache-Control": "no-cache"})
             resp = urlopen(req, timeout=timeout_s)
@@ -173,22 +175,34 @@ def poll_device_loop(device):
             pass
 
         # Push changed outputs back to the Pi.
-        push_outputs_to_device(write_url, board, output_pin_types, last_pushed, timeout_s)
+        push_outputs_to_device(write_url, board, output_pin_types, last_pushed, timeout_s, flash_on)
 
         time.sleep(poll_ms / 1000.0)
 
 
-def push_outputs_to_device(write_url, board, output_pin_types, last_pushed, timeout_s):
+def push_outputs_to_device(write_url, board, output_pin_types, last_pushed, timeout_s, flash_on):
     """For each known output pin, POST /ioio/trigger if the value changed.
 
     Single-pin-per-request is a Pi-side limitation (see APITrigger.java).
     Steady-state cost is near zero because we only POST on change.
+
+    DOUT semantics: STATE["dout"][i] holds 0/1/2 (off/steady-on/flash) per the
+    simulator's IOTypes.bas convention. Flash pins alternate target each cycle
+    based on the caller's flash_on toggle, producing a visible blink at
+    1 / (2 * poll_ms) Hz on the Pi side. The dedup naturally pushes the new
+    value because flash targets differ between cycles.
     """
     for pin_id, pin_type in output_pin_types.items():
         if pin_type == "DOUT":
             if not (0 <= pin_id < len(STATE["dout"])):
                 continue
-            target = 1.0 if STATE["dout"][pin_id] else 0.0
+            val = STATE["dout"][pin_id]
+            if val == 0:
+                target = 0.0
+            elif val >= 2:
+                target = 1.0 if flash_on else 0.0
+            else:
+                target = 1.0
         elif pin_type == "AOUT":
             if not (0 <= pin_id < len(STATE["aout"])):
                 continue
