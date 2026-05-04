@@ -172,7 +172,7 @@ def poll_device_loop(device):
             # continue to work normally.
             pass
 
-        # Push changed outputs back to the Pi.
+        # Push outputs back to the Pi.
         push_outputs_to_device(write_url, board, output_pin_types, last_pushed, timeout_s)
 
         time.sleep(poll_ms / 1000.0)
@@ -202,6 +202,11 @@ def push_outputs_to_device(write_url, board, output_pin_types, last_pushed, time
         else:
             continue
 
+        # Only POST when the target value differs from what we last pushed.
+        # Without this dedup the Pi appears to treat every POST as a "write
+        # event" that briefly pulses the pin, so steady-on pins look like
+        # they're flashing. With dedup, steady values stay genuinely steady
+        # and the Pi's own flash logic (per-pin subtype config) drives blink.
         if last_pushed.get(pin_id) == target:
             continue
 
