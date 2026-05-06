@@ -33,10 +33,10 @@ Verify: in `cmd`, run `python --version`. You should see `Python 3.4.4`.
 
 ## Step 2: Copy the project to XP
 
-1. On a computer with the project, copy the `steamsim-master` folder to
-   your USB stick. It should contain:
+1. On a computer with the project, copy the `SteamSim` folder to your USB
+   stick. It should contain:
    ```
-   steamsim-master/
+   SteamSim/
        Steam_SimV32_00_00_Disabled_Profibus.exe   (the simulator)
        IOApp.exe                                  (the I/O bridge)
        IOApp.cfg                                  (Profibus block configuration)
@@ -45,8 +45,8 @@ Verify: in `cmd`, run `python --version`. You should see `Python 3.4.4`.
            server.cfg.json                        (upstream device config)
    ```
 2. Plug the USB stick into the XP machine.
-3. Copy the `steamsim-master` folder to `C:\` so the full path is
-   `C:\steamsim-master\`.
+3. Copy the `SteamSim` folder to `C:\Source\` so the full path is
+   `C:\Source\SteamSim\`.
 
 The simulator's existing runtime data (`C:\Steam_Sim\Text\`,
 `C:\Steam_Sim\Snapshots\`, `C:\Steam_Sim\Images\`, etc.) stays where it
@@ -56,10 +56,10 @@ simulator installer and should not be moved or renamed.
 
 ### Optional: review configuration files
 
-- `C:\steamsim-master\ioio_server\server.cfg.json` - list of upstream Pi
+- `C:\Source\SteamSim\ioio_server\server.cfg.json` - list of upstream Pi
   devices the Python server polls. Default points at
   `192.168.100.202:8080`. Open in Notepad to add or edit.
-- `C:\steamsim-master\IOApp.cfg` - Profibus block skip list. Defaults to
+- `C:\Source\SteamSim\IOApp.cfg` - Profibus block skip list. Defaults to
   skipping all analog input blocks (`cardA_ai_skip=all`,
   `cardB_ai_skip=all`) because the analog input Profibus hardware at CMA
   is currently broken. If a specific Profibus block needs to be excluded,
@@ -74,13 +74,13 @@ You'll have three windows open. Open them in this order.
 ### Window 1 - Python server
 
 1. **Start -> Run -> `cmd`**.
-2. Type: `cd C:\steamsim-master\ioio_server`
+2. Type: `cd C:\Source\SteamSim\ioio_server`
 3. Type: `python server.py`
 4. Leave this window open and visible. You should see output like:
    ```
    Starting Python HTTP server on http://127.0.0.1:8080
    ...
-   Loaded 1 upstream device(s) from C:\steamsim-master\ioio_server\server.cfg.json
+   Loaded 1 upstream device(s) from C:\Source\SteamSim\ioio_server\server.cfg.json
    Device polling [main_pi]: http://192.168.100.202:8080/ioio/status every 500 ms
    ```
 5. Within ~5 seconds you should also see:
@@ -91,7 +91,7 @@ You'll have three windows open. Open them in this order.
 
 ### Window 2 - Simulator
 
-Double-click `C:\steamsim-master\Steam_SimV32_00_00_Disabled_Profibus.exe`.
+Double-click `C:\Source\SteamSim\Steam_SimV32_00_00_Disabled_Profibus.exe`.
 The simulator's main window opens.
 
 To start the model: **Run -> Cold** (or **Run -> Load Snapshot** to load a
@@ -99,7 +99,7 @@ saved state).
 
 ### Window 3 - I/O App
 
-Double-click `C:\steamsim-master\IOApp.exe`. The form opens with **Status:
+Double-click `C:\Source\SteamSim\IOApp.exe`. The form opens with **Status:
 Stopped**.
 
 Click **Start**. With Profibus cards present, you should see:
