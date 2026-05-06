@@ -31,34 +31,39 @@ Verify: in `cmd`, run `python --version`. You should see `Python 3.4.4`.
 
 ---
 
-## Step 2: Copy the simulator package to XP
+## Step 2: Copy the project to XP
 
-1. On a computer with the simulator package, copy the `Steam_Sim` folder to
+1. On a computer with the project, copy the `steamsim-master` folder to
    your USB stick. It should contain:
    ```
-   Steam_Sim/
+   steamsim-master/
        Steam_SimV32_00_00_Disabled_Profibus.exe   (the simulator)
        IOApp.exe                                  (the I/O bridge)
        IOApp.cfg                                  (Profibus block configuration)
        ioio_server/
            server.py                              (the Python middleman)
            server.cfg.json                        (upstream device config)
-       (and the supporting files for the simulator: Snapshots/, Text/,
-        Sounds/, Images/, etc., per the existing C:\Steam_Sim layout)
    ```
 2. Plug the USB stick into the XP machine.
-3. Copy the `Steam_Sim` folder to `C:\` so the full path is `C:\Steam_Sim\`.
+3. Copy the `steamsim-master` folder to `C:\` so the full path is
+   `C:\steamsim-master\`.
+
+The simulator's existing runtime data (`C:\Steam_Sim\Text\`,
+`C:\Steam_Sim\Snapshots\`, `C:\Steam_Sim\Images\`, etc.) stays where it
+is - several of those paths are hardcoded in the simulator's source and
+the simulator expects them to exist. They're set up by the original
+simulator installer and should not be moved or renamed.
 
 ### Optional: review configuration files
 
-- `C:\Steam_Sim\ioio_server\server.cfg.json` - list of upstream Pi devices
-  the Python server polls. Default points at `192.168.100.202:8080`. Open
-  in Notepad to add or edit.
-- `C:\Steam_Sim\IOApp.cfg` - Profibus block skip list. Defaults to skipping
-  all analog input blocks (`cardA_ai_skip=all`, `cardB_ai_skip=all`)
-  because the analog input Profibus hardware at CMA is currently broken.
-  If a specific Profibus block needs to be excluded, add its address.
-  Reread on every Start click in the I/O App.
+- `C:\steamsim-master\ioio_server\server.cfg.json` - list of upstream Pi
+  devices the Python server polls. Default points at
+  `192.168.100.202:8080`. Open in Notepad to add or edit.
+- `C:\steamsim-master\IOApp.cfg` - Profibus block skip list. Defaults to
+  skipping all analog input blocks (`cardA_ai_skip=all`,
+  `cardB_ai_skip=all`) because the analog input Profibus hardware at CMA
+  is currently broken. If a specific Profibus block needs to be excluded,
+  add its address. Reread on every Start click in the I/O App.
 
 ---
 
@@ -69,13 +74,13 @@ You'll have three windows open. Open them in this order.
 ### Window 1 - Python server
 
 1. **Start -> Run -> `cmd`**.
-2. Type: `cd C:\Steam_Sim\ioio_server`
+2. Type: `cd C:\steamsim-master\ioio_server`
 3. Type: `python server.py`
 4. Leave this window open and visible. You should see output like:
    ```
    Starting Python HTTP server on http://127.0.0.1:8080
    ...
-   Loaded 1 upstream device(s) from C:\Steam_Sim\ioio_server\server.cfg.json
+   Loaded 1 upstream device(s) from C:\steamsim-master\ioio_server\server.cfg.json
    Device polling [main_pi]: http://192.168.100.202:8080/ioio/status every 500 ms
    ```
 5. Within ~5 seconds you should also see:
@@ -86,15 +91,15 @@ You'll have three windows open. Open them in this order.
 
 ### Window 2 - Simulator
 
-Double-click `C:\Steam_Sim\Steam_SimV32_00_00_Disabled_Profibus.exe`. The
-simulator's main window opens.
+Double-click `C:\steamsim-master\Steam_SimV32_00_00_Disabled_Profibus.exe`.
+The simulator's main window opens.
 
 To start the model: **Run -> Cold** (or **Run -> Load Snapshot** to load a
 saved state).
 
 ### Window 3 - I/O App
 
-Double-click `C:\Steam_Sim\IOApp.exe`. The form opens with **Status:
+Double-click `C:\steamsim-master\IOApp.exe`. The form opens with **Status:
 Stopped**.
 
 Click **Start**. With Profibus cards present, you should see:
@@ -112,9 +117,6 @@ Card B. Dismiss both - this is expected without hardware. Status will show
 ---
 
 ## Step 4: Verify the integration
-
-*[This section is a baseline; Richard is updating after seeing the demo
-video.]*
 
 Five tests, in order. Each one verifies a specific link in the chain.
 
@@ -171,8 +173,9 @@ Every couple of seconds you'll see a line like:
 
 `aout[0]` should be non-zero and changing as the simulator runs.
 
-**If aout[0] stays at zero forever:** check Window 1 for `POST /ioio/outputs`
-lines. There should be one every ~300 ms while the simulator is running.
+**If aout[0] stays at zero forever:** check Window 1 for
+`POST /ioio/outputs` lines. There should be one every ~300 ms while the
+simulator is running.
 
 ### Test 5: Pi outputs are receiving server commands
 
