@@ -137,7 +137,7 @@ server.
 
 ### Setup
 
-1. On the XP box: `cd ioio_server && python server.py`. Leave it
+1. On the XP box: `cd io_server && python server.py`. Leave it
    running, watching for log output.
 2. Launch the simulator (Executive.exe) — it polls the server for inputs and
    pushes outputs.

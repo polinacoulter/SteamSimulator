@@ -23,7 +23,7 @@ request.
 ## Run
 
 ```bash
-cd /Users/polinacoulter/SteamSimulator/ioio_server
+cd /Users/polinacoulter/SteamSimulator/io_server
 python3 server.py
 ```
 

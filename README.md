@@ -17,7 +17,7 @@ simulator can run on machines without the Applicom hardware.
         I/O App (separate VB6 EXE)  <->  Profibus cards
 ```
 
-The Python server (`ioio_server/server.py`) maintains in-memory I/O state.
+The Python server (`io_server/server.py`) maintains in-memory I/O state.
 The full simulator and the I/O App both talk to it; they never talk to
 each other directly. The Pi pushes physical sensor readings into the
 server's state on a configurable polling schedule.
@@ -28,7 +28,7 @@ server's state on a configurable polling schedule.
 |---|---|
 | `steamsim-master/` | The full simulator's VB6 source tree (canonical name carried over from the original distribution). Modified files: `IO.bas`, `IOTypes.bas`, `IOIOReadyStateHandler.cls`, `TakeSnapForm.frm`, `Host.Frm` under `STEAM_SIM_V31/VB Files/`. |
 | `IOApp/` | The new I/O App VB6 project. Standalone executable that bridges Profibus and the Python server. Has its own README inside. |
-| `ioio_server/` | The Python middleman: `server.py`, `server.cfg.json`, README. |
+| `io_server/` | The Python middleman: `server.py`, `server.cfg.json`, README. |
 
 ## What got built (milestone-by-milestone)
 
@@ -41,7 +41,7 @@ server's state on a configurable polling schedule.
   the SnapCompare page starts clean and surfaces real changes as mismatches.
 - **Python server reads from Pi** - Background polling thread per device,
   parses the Pi's JSON, captures both AIN and DIN. Configurable via
-  `ioio_server/server.cfg.json`.
+  `io_server/server.cfg.json`.
 - **Python server writes to Pi** - For each output pin the Pi exposes,
   POST `/ioio/trigger` when the value changes.
 - **I/O App** - New separate VB6 EXE. Reads Profibus inputs and POSTs them
