@@ -1,4 +1,5 @@
 import json
+import re
 import threading
 import time
 
@@ -39,19 +40,29 @@ STATE = {
 }
 
 
+# Pin classification is name-driven: the Pi's `name` field carries the
+# simulator-side array index as a prefix, e.g. "ain04: Port Rudder" -> AIN
+# at index 4, "din05: Stbd Override" -> DIN at index 5. This decouples the
+# Pi's hardware pin id from the simulator's fixed slot numbering, so a Pi
+# can be re-wired without touching simulator code as long as names stay
+# consistent.
+PIN_NAME_RE = re.compile(r"^\s*(ain|din|aout|dout)(\d+)", re.IGNORECASE)
+
+
 def extract_pi_pins_from_json(text):
     # Pi response is a JSON array of pin objects:
-    #   {"id":43,"name":"Port Rudder Control","type":"AIN","status":0.5097,"calibrated":0.0}
-    #   {"id":15,"name":"Stbd Override","type":"DIN","status":0.0,"calibrated":0.0}
-    #   {"id":1,"name":"Lamp 1","type":"DOUT","status":1.0,"calibrated":1.0}
-    # AIN: status (0.0-1.0 normalized) scaled to byte 0-255. The "calibrated"
-    # field exists but is unreliable (sometimes negative, sometimes unscaled).
-    # DIN: status is 0.0 or 1.0; threshold for safety against noisy floats.
-    # DOUT/AOUT: we don't read these (they're things the Pi drives), but we
-    # capture the pin ids so the writeback path (/ioio/trigger) knows which
-    # pins to push.
-    # Returns (ain_values, din_values, output_pin_types) where output_pin_types
-    # maps pin_id -> "DOUT" or "AOUT".
+    #   {"id":43,"name":"ain04: Port Rudder","type":"AIN","status":0.5097,"calibrated":0.0}
+    #   {"id":15,"name":"din05: Stbd Override","type":"DIN","status":0.0,"calibrated":1.0}
+    #   {"id":1,"name":"dout02: Lamp 1","type":"DOUT","status":1.0,"calibrated":1.0}
+    # Index comes from the digits after the ain/din/aout/dout prefix in the
+    # `name` field. The Pi's `id` field is used only as the pin number for
+    # the writeback POST to /ioio/trigger (DOUT/AOUT case).
+    # AIN: status (0.0-1.0 normalized) scaled to byte 0-255.
+    # DIN: calibrated field (0 or 1) is used directly (not status).
+    # DOUT/AOUT: not read; we just record (sim_index, pi_pin_id, type) so the
+    # writeback knows where in STATE to look and which Pi pin to POST to.
+    # Returns (ain_values, din_values, output_pin_map) where output_pin_map
+    # maps sim_index -> (pi_pin_id, "DOUT"|"AOUT").
     try:
         data = json.loads(text)
     except (ValueError, TypeError):
@@ -61,17 +72,26 @@ def extract_pi_pins_from_json(text):
 
     ain_values = {}
     din_values = {}
-    output_pin_types = {}
+    output_pin_map = {}
     for entry in data:
         if not isinstance(entry, dict):
             continue
-        type_str = entry.get("type")
-        idx = entry.get("id")
-        status = entry.get("status")
-        if not isinstance(idx, int):
+        name = entry.get("name")
+        if not isinstance(name, str):
+            continue
+        match = PIN_NAME_RE.match(name)
+        if not match:
+            continue
+        prefix = match.group(1).lower()
+        try:
+            sim_index = int(match.group(2))
+        except (ValueError, TypeError):
             continue
 
-        if type_str == "AIN" and status is not None:
+        if prefix == "ain":
+            status = entry.get("status")
+            if status is None:
+                continue
             try:
                 byte_value = int(round(float(status) * 255))
             except (ValueError, TypeError):
@@ -80,19 +100,25 @@ def extract_pi_pins_from_json(text):
                 byte_value = 0
             elif byte_value > 255:
                 byte_value = 255
-            if 0 <= idx < len(STATE["ain"]):
-                ain_values[idx] = byte_value
-        elif type_str == "DIN" and status is not None:
+            if 0 <= sim_index < len(STATE["ain"]):
+                ain_values[sim_index] = byte_value
+        elif prefix == "din":
+            calibrated = entry.get("calibrated")
+            if calibrated is None:
+                continue
             try:
-                bit_value = 1 if float(status) > 0.5 else 0
+                bit_value = 1 if float(calibrated) > 0.5 else 0
             except (ValueError, TypeError):
                 continue
-            if 0 <= idx < len(STATE["din"]):
-                din_values[idx] = bit_value
-        elif type_str == "DOUT" or type_str == "AOUT":
-            output_pin_types[idx] = type_str
+            if 0 <= sim_index < len(STATE["din"]):
+                din_values[sim_index] = bit_value
+        elif prefix in ("dout", "aout"):
+            pi_pin_id = entry.get("id")
+            if not isinstance(pi_pin_id, int):
+                continue
+            output_pin_map[sim_index] = (pi_pin_id, prefix.upper())
 
-    return ain_values, din_values, output_pin_types
+    return ain_values, din_values, output_pin_map
 
 
 def load_devices_config():
@@ -148,7 +174,7 @@ def poll_device_loop(device):
 
     print("Device polling [%s]: %s every %d ms" % (name, url, poll_ms))
     first_success_logged = False
-    output_pin_types = {}
+    output_pin_map = {}
     last_pushed = {}
 
     while True:
@@ -156,12 +182,12 @@ def poll_device_loop(device):
             req = Request(url, headers={"Cache-Control": "no-cache"})
             resp = urlopen(req, timeout=timeout_s)
             text = resp.read().decode("utf-8", errors="replace")
-            ain_values, din_values, output_types_seen = extract_pi_pins_from_json(text)
+            ain_values, din_values, outputs_seen = extract_pi_pins_from_json(text)
             for idx, val in ain_values.items():
                 STATE["ain"][idx] = val
             for idx, val in din_values.items():
                 STATE["din"][idx] = val
-            output_pin_types.update(output_types_seen)
+            output_pin_map.update(outputs_seen)
             if (ain_values or din_values) and not first_success_logged:
                 print("Device polling [%s]: first response, %d AIN + %d DIN pins captured"
                       % (name, len(ain_values), len(din_values)))
@@ -173,13 +199,17 @@ def poll_device_loop(device):
             pass
 
         # Push outputs back to the Pi.
-        push_outputs_to_device(write_url, board, output_pin_types, last_pushed, timeout_s)
+        push_outputs_to_device(write_url, board, output_pin_map, last_pushed, timeout_s)
 
         time.sleep(poll_ms / 1000.0)
 
 
-def push_outputs_to_device(write_url, board, output_pin_types, last_pushed, timeout_s):
+def push_outputs_to_device(write_url, board, output_pin_map, last_pushed, timeout_s):
     """For each known output pin, POST /ioio/trigger if the value changed.
+
+    output_pin_map maps sim_index -> (pi_pin_id, "DOUT"|"AOUT"). The sim_index
+    selects the STATE slot to read; the pi_pin_id is what gets POSTed to the
+    Pi's /ioio/trigger endpoint.
 
     Single-pin-per-request is a Pi-side limitation (see APITrigger.java).
     Steady-state cost is near zero because we only POST on change.
@@ -190,15 +220,15 @@ def push_outputs_to_device(write_url, board, output_pin_types, last_pushed, time
     a blink, it interfered with whatever the Pi already does and produced
     flickery/wrong output. Simpler is correct.
     """
-    for pin_id, pin_type in output_pin_types.items():
+    for sim_index, (pi_pin_id, pin_type) in output_pin_map.items():
         if pin_type == "DOUT":
-            if not (0 <= pin_id < len(STATE["dout"])):
+            if not (0 <= sim_index < len(STATE["dout"])):
                 continue
-            target = 1.0 if STATE["dout"][pin_id] else 0.0
+            target = 1.0 if STATE["dout"][sim_index] else 0.0
         elif pin_type == "AOUT":
-            if not (0 <= pin_id < len(STATE["aout"])):
+            if not (0 <= sim_index < len(STATE["aout"])):
                 continue
-            target = STATE["aout"][pin_id] / 255.0
+            target = STATE["aout"][sim_index] / 255.0
         else:
             continue
 
@@ -207,11 +237,11 @@ def push_outputs_to_device(write_url, board, output_pin_types, last_pushed, time
         # event" that briefly pulses the pin, so steady-on pins look like
         # they're flashing. With dedup, steady values stay genuinely steady
         # and the Pi's own flash logic (per-pin subtype config) drives blink.
-        if last_pushed.get(pin_id) == target:
+        if last_pushed.get(pi_pin_id) == target:
             continue
 
         try:
-            body = ("board=%d&pin=%d&state=%g" % (board, pin_id, target)).encode("utf-8")
+            body = ("board=%d&pin=%d&state=%g" % (board, pi_pin_id, target)).encode("utf-8")
             req = Request(
                 write_url,
                 data=body,
@@ -222,7 +252,7 @@ def push_outputs_to_device(write_url, board, output_pin_types, last_pushed, time
             )
             resp = urlopen(req, timeout=timeout_s)
             resp.read()
-            last_pushed[pin_id] = target
+            last_pushed[pi_pin_id] = target
         except Exception:
             # Pi unreachable or rejected; try again next cycle.
             pass
