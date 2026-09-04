@@ -241,26 +241,202 @@ send to support:
 
 ---
 
-# PHASE 2: Raspberry Pi feed + simulator (coming later)
+# PHASE 2: Raspberry Pi feed + simulator
 
 Phase 2 adds two more components on top of Phase 1:
 
 - **Raspberry Pi feed** - your Pi's XML-formatted status response gets
-  parsed by an updated Python server and used to drive analog/digital
+  parsed by the updated Python server and used to drive analog/digital
   inputs that the Profibus side doesn't cover.
 - **Simulator** (`Steam_SimV32_00_00_Disabled_Profibus.exe`) - the steam
   simulator UI and model, with Profibus reads/writes disabled
   internally so they go through the Python server instead.
 
-When Phase 2 ships you'll receive:
-
-- An updated `server.py` that reads XML from your Pi.
-- A refreshed `server.cfg.json` with your Pi's address pre-filled.
-- The simulator EXE.
-- A revision of this document with installation steps for the new
-  files, a new launch order (Python server -> I/O App -> Simulator),
-  and end-to-end verification tests (Pi -> server -> simulator -> server
-  -> I/O App -> Profibus).
-
 The Phase 1 components stay where they are; Phase 2 layers on top
 without re-installing anything.
+
+## What you're installing (Phase 2)
+
+Three files replace or add to the Phase 1 install:
+
+```
+io_server\server.py                          (updated - parses Pi XML)
+io_server\server.cfg.json                    (updated - points at your Pi)
+Steam_SimV32_00_00_Disabled_Profibus.exe     (new - the simulator itself)
+```
+
+`IOApp.exe` and `IOApp.cfg` from Phase 1 stay exactly as installed.
+
+---
+
+## Step 1: Network - confirm the Pi is reachable
+
+Before touching any files, from `cmd` on the XP machine:
+
+```
+ping <pi-ip>
+```
+
+You should get replies. Then:
+
+```
+curl http://<pi-ip>:8080/ioio/status
+```
+
+(If `curl` isn't installed on XP, point Firefox at the same URL.) You
+should see an XML document listing pins. Copy the first ~20 lines of
+that response into an email to support if anything looks off - it's
+the exact input the updated `server.py` has to parse.
+
+**If the ping fails:** the simulator XP host can't see the Pi on the
+network. Fix that before going further; nothing else in Phase 2 will
+work until the Pi is reachable.
+
+---
+
+## Step 2: Drop in the Phase 2 files
+
+With the Python server and I/O App both **stopped** (see Phase 1
+Step 5 if either is still running), copy from your USB stick:
+
+- Overwrite `C:\Steam_Sim\io_server\server.py` with the Phase 2 version.
+- Overwrite `C:\Steam_Sim\io_server\server.cfg.json` with the Phase 2
+  version.
+- Copy `Steam_SimV32_00_00_Disabled_Profibus.exe` into `C:\Steam_Sim\`.
+
+Open `C:\Steam_Sim\io_server\server.cfg.json` in Notepad. Find:
+
+```json
+"url": "http://REPLACE_WITH_PI_IP:8080/ioio/status",
+```
+
+Replace `REPLACE_WITH_PI_IP` with the Pi's actual IP address (the one
+that responded to the `ping` in Step 1). Save and close.
+
+The simulator's existing runtime data (`C:\Steam_Sim\Text\`,
+`C:\Steam_Sim\Snapshots\`, etc.) is used by the simulator EXE - it
+must already be in place on this machine.
+
+---
+
+## Step 3: Launch order
+
+Order matters. Bring components up one at a time so a failure at any
+step is easy to isolate.
+
+### Window 1 - Python server
+
+1. **Start -> Run -> `cmd`**.
+2. `cd C:\Steam_Sim\io_server`
+3. `python server.py`
+
+Expected output includes:
+
+```
+Starting Python HTTP server on http://127.0.0.1:8080
+...
+Loaded 1 upstream device(s) from C:\Steam_Sim\io_server\server.cfg.json
+Device polling [cma_pi]: http://<pi-ip>:8080/ioio/status every 500 ms
+Device polling [cma_pi]: first response, N AIN + M DIN pins captured
+```
+
+The "first response" line confirms the Pi is being reached and its
+XML is being parsed. If you never see it, jump to Phase 2
+troubleshooting below.
+
+### Window 2 - I/O App
+
+Double-click `C:\Steam_Sim\IOApp.exe`. Click **Start**. Same expected
+output as Phase 1 - "Card A initialized OK", "Card B initialized OK",
+"Starting I/O loop", and a stream of `tick` lines.
+
+### Window 3 - Simulator
+
+Double-click `C:\Steam_Sim\Steam_SimV32_00_00_Disabled_Profibus.exe`.
+The simulator UI comes up. Give it a few seconds to settle and start
+polling the server.
+
+---
+
+## Step 4: Verify Phase 2
+
+Four tests, in order. Each one adds one more hop of the full loop.
+
+### Test 4: Pi -> server
+
+In Firefox on XP, `http://127.0.0.1:8080/test/analog`. The channels
+your Pi covers should show non-zero values that update as physical
+inputs on the Pi side change. Same drill on
+`http://127.0.0.1:8080/test/digital` for digital inputs.
+
+This is Phase 1's Test 2 but for the Pi-driven channels instead of
+the Profibus-driven ones.
+
+**If values stay at zero:** check Window 1 for the "first response"
+line from Step 3. If it never appeared, the server isn't parsing the
+Pi's XML successfully. Copy the raw response body (Step 1's `curl`
+command) into an email to support.
+
+### Test 5: Pi -> server -> simulator
+
+Move a physical input on the Pi side. The corresponding
+gauge/lamp/indicator in the simulator UI should update within ~1
+second.
+
+**If the browser page updates (Test 4 passed) but the simulator UI
+doesn't:** the simulator isn't polling the server. Check that the
+simulator's `IOIO_STATUS_URL` is pointed at `http://127.0.0.1:8080`
+and not the old direct-Profibus path.
+
+### Test 6: Simulator -> server -> I/O App -> Profibus
+
+Drive an output from the simulator UI (start a pump, energize a
+solenoid, whatever the training scenario calls for) whose target
+device is on the Profibus side. Within ~1 second:
+
+- Window 1 should show a `POST /ioio/outputs` line from the simulator.
+- Window 2 should show a `tick` with the corresponding `dout[N]` or
+  `aout[N]` value.
+- The physical lamp/relay/gauge should respond.
+
+This is the full write path end-to-end.
+
+### Test 7: Snapshot load pushes expected inputs
+
+Load a snapshot in the simulator. On load, the simulator pushes the
+snapshot's expected `ain`/`din` values to the server so the
+SnapCompare page starts clean.
+
+Immediately after the load, open `http://127.0.0.1:8080/test/analog`
+in Firefox. The values shown should match the snapshot's expected
+inputs (until the Pi's next poll overwrites the Pi-covered channels,
+which is fine - that's the normal running state).
+
+---
+
+## Step 5: Shutting Phase 2 down
+
+Reverse the launch order:
+
+1. Close the simulator window.
+2. In the I/O App, click **Stop**, then close the window.
+3. In the Python server console (Window 1), press **Ctrl+C**, then
+   close the window.
+
+---
+
+## Phase 2 troubleshooting
+
+Same collection procedure as Phase 1, plus:
+
+5. **Raw Pi response.** From `cmd` on XP:
+   `curl http://<pi-ip>:8080/ioio/status > pi_response.xml`
+   Attach `pi_response.xml` to the email. This is what the server is
+   trying to parse; a few characters out of place in the XML will
+   break the parser silently.
+6. **Server device log lines.** In Window 1, look for any line
+   starting with `Device polling [cma_pi]:` and include all of them.
+
+If Test 4 fails but Test 1/2/3 (from Phase 1) still pass, the
+Profibus side is fine and the problem is Pi-side only - the two
+paths are independent.

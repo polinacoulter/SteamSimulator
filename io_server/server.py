@@ -13,6 +13,8 @@ try:
 except ImportError:
     from urllib2 import urlopen, Request
 
+import xml.etree.ElementTree as ET
+
 HOST = "127.0.0.1"
 PORT = 8080
 
@@ -121,6 +123,120 @@ def extract_pi_pins_from_json(text):
     return ain_values, din_values, output_pin_map
 
 
+def extract_pi_pins_from_xml(text):
+    # Pi at CMA emits XML instead of JSON. Same semantics as
+    # extract_pi_pins_from_json — index parsed from the ain##/din##/aout##/
+    # dout## prefix in the pin's `name`, `status` scaled to a byte for AIN,
+    # `calibrated` treated as a bit for DIN, DOUT/AOUT stashed for writeback.
+    #
+    # Accepts both attribute-form and child-element form so we don't have to
+    # pin down the exact schema up front:
+    #
+    #   <pins>
+    #     <pin id="43" name="ain04: Port Rudder" type="AIN"
+    #          status="0.5097" calibrated="0.0"/>
+    #   </pins>
+    #
+    # or
+    #
+    #   <pins>
+    #     <pin>
+    #       <id>43</id><name>ain04: Port Rudder</name><type>AIN</type>
+    #       <status>0.5097</status><calibrated>0.0</calibrated>
+    #     </pin>
+    #   </pins>
+    #
+    # Root tag name isn't checked; any element whose direct children are
+    # pin-shaped works.
+    try:
+        root = ET.fromstring(text)
+    except ET.ParseError:
+        return {}, {}, {}
+
+    ain_values = {}
+    din_values = {}
+    output_pin_map = {}
+
+    def field(elem, key):
+        # Attribute first, then child element with matching tag. Returns None
+        # if neither is present. Case-insensitive on attribute names.
+        for k, v in elem.attrib.items():
+            if k.lower() == key:
+                return v
+        child = elem.find(key)
+        if child is not None and child.text is not None:
+            return child.text.strip()
+        return None
+
+    # Walk one level down from the root — every pin-shaped element is a
+    # direct child of some container (<pins>, <status>, etc.).
+    candidates = list(root)
+    if not candidates:
+        candidates = [root]
+
+    for entry in candidates:
+        name = field(entry, "name")
+        if not name:
+            continue
+        match = PIN_NAME_RE.match(name)
+        if not match:
+            continue
+        prefix = match.group(1).lower()
+        try:
+            sim_index = int(match.group(2))
+        except (ValueError, TypeError):
+            continue
+
+        if prefix == "ain":
+            status = field(entry, "status")
+            if status is None:
+                continue
+            try:
+                byte_value = int(round(float(status) * 255))
+            except (ValueError, TypeError):
+                continue
+            if byte_value < 0:
+                byte_value = 0
+            elif byte_value > 255:
+                byte_value = 255
+            if 0 <= sim_index < len(STATE["ain"]):
+                ain_values[sim_index] = byte_value
+        elif prefix == "din":
+            calibrated = field(entry, "calibrated")
+            if calibrated is None:
+                continue
+            try:
+                bit_value = 1 if float(calibrated) > 0.5 else 0
+            except (ValueError, TypeError):
+                continue
+            if 0 <= sim_index < len(STATE["din"]):
+                din_values[sim_index] = bit_value
+        elif prefix in ("dout", "aout"):
+            pi_pin_id_raw = field(entry, "id")
+            if pi_pin_id_raw is None:
+                continue
+            try:
+                pi_pin_id = int(pi_pin_id_raw)
+            except (ValueError, TypeError):
+                continue
+            output_pin_map[sim_index] = (pi_pin_id, prefix.upper())
+
+    return ain_values, din_values, output_pin_map
+
+
+def extract_pi_pins(text):
+    # Dispatcher: first non-whitespace byte decides. Keeps server.cfg.json
+    # free of a per-device format flag — the Pi's own response is self-
+    # describing.
+    for ch in text:
+        if ch.isspace():
+            continue
+        if ch == "<":
+            return extract_pi_pins_from_xml(text)
+        return extract_pi_pins_from_json(text)
+    return {}, {}, {}
+
+
 def load_devices_config():
     """Read server.cfg.json and return a normalized list of device dicts.
 
@@ -182,7 +298,7 @@ def poll_device_loop(device):
             req = Request(url, headers={"Cache-Control": "no-cache"})
             resp = urlopen(req, timeout=timeout_s)
             text = resp.read().decode("utf-8", errors="replace")
-            ain_values, din_values, outputs_seen = extract_pi_pins_from_json(text)
+            ain_values, din_values, outputs_seen = extract_pi_pins(text)
             for idx, val in ain_values.items():
                 STATE["ain"][idx] = val
             for idx, val in din_values.items():
